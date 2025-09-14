@@ -17,6 +17,7 @@ import {
   getRedirectResult,
   updateProfile,
   sendEmailVerification,
+  sendPasswordResetEmail,
   type UserCredential,
   type Unsubscribe
 } from 'firebase/auth';
@@ -39,6 +40,7 @@ import { PremiumService } from './premium.service';
 import { CalendarService } from './calendar.service';
 import { createAuthError } from '../utils/errors';
 import { validateEmail, validatePassword } from '../utils/validation';
+import { requireAuthentication, updateLastLogin } from '../utils/auth-helpers';
 import { logger } from '../utils/logger';
 import { AUTH_EVENTS, GOOGLE_AUTH_SCOPES, GOOGLE_CALENDAR_SCOPES } from '../constants/auth.constants';
 
@@ -81,7 +83,7 @@ export class AuthService {
 
       // Initialize dependent services
       this.tokenService = new TokenService(config);
-      this.sessionService = new SessionService(config);
+      this.sessionService = new SessionService(config.session || {});
       this.premiumService = new PremiumService(config);
       this.calendarService = new CalendarService(config);
 
@@ -121,6 +123,11 @@ export class AuthService {
         isAuthenticated: false,
         isLoading: false,
         session: null,
+        currentSession: null,
+        isActive: false,
+        lastActivity: null,
+        sessions: new Map(),
+        syncTimer: null,
         tokens: { accessToken: null, refreshToken: null },
         error: null,
         lastSyncAt: 0
@@ -503,6 +510,20 @@ export class AuthService {
     this.emitEvent('onAuthStateChanged', null);
 
     logger.info('User signed out successfully');
+  }
+
+  public async resetPassword(email: string): Promise<void> {
+    if (!this.auth) throw new Error('Auth not initialized');
+
+    try {
+      this.clearError();
+      await sendPasswordResetEmail(this.auth, email);
+      logger.info('Password reset email sent successfully', { email });
+    } catch (error) {
+      const authError = this.handleFirebaseError(error);
+      this.updateState({ error: authError });
+      throw authError;
+    }
   }
 
   // ============================================================================

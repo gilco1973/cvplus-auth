@@ -8,8 +8,7 @@ import type {
   Role, 
   Permission, 
   PermissionMatrix, 
-  StandardRole, 
-  StandardResource,
+  StandardRole,
   PermissionGroup
 } from '../types';
 

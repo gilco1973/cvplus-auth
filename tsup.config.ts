@@ -12,11 +12,13 @@ export default defineConfig({
     'react-dom',
     'firebase',
     'firebase-admin',
-    '@cvplus/core'
+    '@cvplus/core',
+    'lucide-react'
   ],
   esbuildOptions(options) {
     options.banner = {
       js: '"use client";',
     };
   },
+  tsconfig: 'tsconfig.build.json',
 });

@@ -9,7 +9,7 @@ import type {
   PremiumTier, 
   PremiumFeatures, 
   MonetaryAmount,
-  FeatureGate
+  FeatureGateConfig
 } from '../types';
 
 // ============================================================================
@@ -294,7 +294,7 @@ export const PREMIUM_PLANS: Record<PremiumTier, PremiumPlan> = {
 // ============================================================================
 // FEATURE GATES
 // ============================================================================
-export const PREMIUM_FEATURE_GATES: Record<string, FeatureGate> = {
+export const PREMIUM_FEATURE_GATES: Record<string, FeatureGateConfig> = {
   webPortal: {
     feature: 'webPortal',
     required: {

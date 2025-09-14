@@ -74,7 +74,9 @@ export const STORAGE_KEYS = {
   PREMIUM: 'cvplus_premium_status',
   PREFERENCES: 'cvplus_user_preferences',
   PROFILE: 'cvplus_user_profile',
-  CALENDAR_TOKENS: 'cvplus_calendar_tokens'
+  CALENDAR_TOKENS: 'cvplus_calendar_tokens',
+  SESSION_PREFIX: 'cvplus_session_',
+  CURRENT_SESSION: 'cvplus_current_session'
 } as const;
 
 // ============================================================================

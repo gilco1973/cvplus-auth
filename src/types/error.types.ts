@@ -49,6 +49,10 @@ export type AuthErrorCode =
   | 'session/concurrent-limit-exceeded'
   | 'session/refresh-failed'
   | 'session/sync-failed'
+  | 'session-init-failed'
+  | 'session-refresh-failed'
+  | 'session-end-failed'
+  | 'session-storage-failed'
   
   // Token Management Errors
   | 'token/expired'

@@ -24,6 +24,10 @@ export class TokenService {
 
   constructor(config: AuthConfig) {
     this.config = config;
+    // Use config for token management settings
+    logger.info('TokenService initialized', { 
+      maxAge: TOKEN_DEFAULTS.MAX_AGE 
+    });
   }
 
   /**
@@ -136,7 +140,7 @@ export class TokenService {
   /**
    * Creates a new session token
    */
-  createSessionToken(userId: string, scopes: string[]): SessionToken {
+  createSessionToken(_userId: string, scopes: string[]): SessionToken {
     const now = Date.now();
     const expiresAt = now + TOKEN_DEFAULTS.MAX_AGE;
 
@@ -157,7 +161,7 @@ export class TokenService {
       const parts = token.split('.');
       if (parts.length !== 3) return null;
 
-      const payload = JSON.parse(atob(parts[1]));
+      const payload = JSON.parse(atob(parts[1] || ''));
       
       return {
         token,
@@ -241,7 +245,7 @@ export class TokenService {
   /**
    * Loads token metadata from localStorage
    */
-  private loadTokenFromStorage(userId: string): TokenCache | null {
+  private _loadTokenFromStorage(userId: string): TokenCache | null {
     if (typeof window === 'undefined' || !window.localStorage) return null;
     
     try {

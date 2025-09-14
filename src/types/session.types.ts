@@ -23,6 +23,13 @@ export interface SessionDeviceInfo {
   os?: string;
   isMobile: boolean;
   fingerprint?: string;
+  language?: string;
+  timezone?: string;
+  screen?: {
+    width: number;
+    height: number;
+    colorDepth?: number;
+  };
 }
 
 export interface SessionLocation {
@@ -56,6 +63,11 @@ export interface SessionState {
   isAuthenticated: boolean;
   isLoading: boolean;
   session: AuthSession | null;
+  currentSession: AuthSession | null;
+  isActive: boolean;
+  lastActivity: number | null;
+  sessions: Map<string, AuthSession>;
+  syncTimer: NodeJS.Timeout | null;
   tokens: {
     accessToken: SessionToken | null;
     refreshToken: SessionToken | null;
@@ -88,10 +100,17 @@ export interface SessionConfig {
   timeout: number;
   refreshThreshold: number;
   maxConcurrentSessions: number;
-  requireRecentLogin: number;
+  requireRecentAuth: number;
   enableCrossTabSync: boolean;
   persistSession: boolean;
   sessionStorageKey: string;
+  storageType?: 'localStorage' | 'sessionStorage' | 'memory';
+  idleTimeout?: number;
+  syncInterval?: number;
+  gracePeriod?: number;
+  encryptStorage?: boolean;
+  enforceSessionLimit?: boolean;
+  trackActivity?: boolean;
 }
 
 export interface SessionEvents {

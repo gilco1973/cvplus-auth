@@ -2,19 +2,53 @@
  * Error Utilities
  * 
  * Authentication error creation and handling utilities.
+ * Integrates with Core error handling when available for consistency.
  */
 
 import type { AuthError, AuthErrorCode, AuthErrorContext } from '../types';
 import { DEFAULT_ERROR_MESSAGES } from '../types/error.types';
 
+// Import Core error utilities when available
+let CVAuthenticationError: any = null;
+let handleError: any = null;
+let createErrorContext: any = null;
+
+try {
+  const coreUtils = require('@cvplus/core');
+  CVAuthenticationError = coreUtils.CVAuthenticationError;
+  handleError = coreUtils.handleError;
+  createErrorContext = coreUtils.createErrorContext;
+} catch (error) {
+  // Core error handling not available, will use local implementations
+}
+
 /**
  * Creates a standardized authentication error
+ * Integrates with Core error handling when available for consistency
  */
 export function createAuthError(
   code: AuthErrorCode,
   message: string,
   context?: AuthErrorContext
 ): AuthError {
+  // Try to use Core error handling if available
+  if (CVAuthenticationError && handleError && createErrorContext) {
+    try {
+      const coreContext = createErrorContext(
+        'auth',
+        context?.operation || 'authentication',
+        context?.userId,
+        context?.additionalData
+      );
+      
+      const coreError = new CVAuthenticationError(message, coreContext);
+      handleError(coreError, coreContext);
+    } catch (coreError) {
+      // If Core error handling fails, continue with local handling
+      console.warn('Core error handling failed, using local implementation:', coreError);
+    }
+  }
+
   const error: AuthError = {
     code,
     message,

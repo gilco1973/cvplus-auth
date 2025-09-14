@@ -10,48 +10,81 @@ import type {
   AuthenticatedUser,
   SessionDeviceInfo,
   AuthError,
-  AuthConfig
+  AuthConfig,
+  SessionConfig
 } from '../types';
 import { createAuthError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { SESSION_DEFAULTS, STORAGE_KEYS } from '../constants/auth.constants';
+import { STORAGE_KEYS } from '../constants/auth.constants';
 
 export class SessionService {
-  private config: AuthConfig['session'];
-  private sessionState: SessionState;
-  private syncInterval: NodeJS.Timeout | null = null;
-  private activityTimeout: NodeJS.Timeout | null = null;
+  private config: AuthConfig['session'] & { 
+    maxConcurrentSessions?: number;
+    requireRecentAuth?: number;
+    sessionStorageKey?: string;
+    gracePeriod?: number;
+    encryptStorage?: boolean;
+    enforceSessionLimit?: boolean;
+    trackActivity?: boolean;
+  };
+  private state: SessionState = {
+    isAuthenticated: false,
+    isLoading: false,
+    session: null,
+    currentSession: null,
+    isActive: false,
+    lastActivity: null,
+    sessions: new Map(),
+    syncTimer: null,
+    tokens: { accessToken: null, refreshToken: null },
+    error: null,
+    lastSyncAt: 0
+  };
+  private eventHandlers = new Map<string, Set<Function>>();
 
-  constructor(config: AuthConfig) {
-    this.config = config.session;
-    this.sessionState = this.initializeSessionState();
-    
-    if (this.config.enableCrossTabSync) {
-      this.setupCrossTabSync();
-    }
-  }
-
-  private initializeSessionState(): SessionState {
-    return {
-      isAuthenticated: false,
-      isLoading: false,
-      session: null,
-      tokens: {
-        accessToken: null,
-        refreshToken: null
-      },
-      error: null,
-      lastSyncAt: 0
+  constructor(config: Partial<AuthConfig['session']> & { 
+    maxConcurrentSessions?: number;
+    requireRecentAuth?: number;
+    sessionStorageKey?: string;
+    gracePeriod?: number;
+    encryptStorage?: boolean;
+    enforceSessionLimit?: boolean;
+    trackActivity?: boolean;
+  } = {}) {
+    // Set default config values
+    const defaultConfig = {
+      timeout: 24 * 60 * 60 * 1000, // 24 hours default
+      refreshThreshold: 5 * 60 * 1000, // 5 minutes default
+      maxConcurrentSessions: 5,
+      requireRecentAuth: 10 * 60 * 1000, // 10 minutes default
+      enableCrossTabSync: true,
+      persistSession: true,
+      sessionStorageKey: 'cvplus_session_storage',
+      storageType: 'localStorage' as const,
+      idleTimeout: 30 * 60 * 1000, // 30 minutes default
+      syncInterval: 30 * 1000, // 30 seconds default
+      gracePeriod: 2 * 60 * 1000, // 2 minutes default
+      encryptStorage: true,
+      enforceSessionLimit: false,
+      trackActivity: true
     };
+
+    this.config = {
+      ...defaultConfig,
+      ...config
+    };
+    
+    this.initializeEventHandlers();
   }
 
   /**
-   * Initializes a new session for an authenticated user
+   * Initialize a new session for an authenticated user
    */
   async initializeSession(user: AuthenticatedUser): Promise<void> {
     try {
       const deviceInfo = this.getDeviceInfo();
       const sessionId = this.generateSessionId();
+      const locationInfo = await this.getLocationInfo();
       
       const session: AuthSession = {
         sessionId,
@@ -60,7 +93,7 @@ export class SessionService {
         lastActivity: Date.now(),
         expiresAt: Date.now() + this.config.timeout,
         deviceInfo,
-        location: await this.getLocationInfo(),
+        ...(locationInfo && { location: locationInfo }),
         flags: {
           isActive: true,
           isVerified: user.emailVerified,
@@ -70,110 +103,144 @@ export class SessionService {
         }
       };
 
-      this.sessionState = {
-        isAuthenticated: true,
-        isLoading: false,
-        session,
-        tokens: {
-          accessToken: null, // Would be populated by TokenService
-          refreshToken: null
-        },
-        error: null,
-        lastSyncAt: Date.now()
-      };
+      // Store session
+      await this.storeSession(session);
+      
+      // Update internal state
+      this.state.currentSession = session;
+      this.state.isActive = true;
+      this.state.lastActivity = Date.now();
+      this.state.sessions.set(sessionId, session);
 
-      // Store session if persistence is enabled
-      if (this.config.persistSession) {
-        await this.persistSession(session);
+      // Start activity tracking
+      if (this.config.trackActivity) {
+        this.startActivityTracking();
       }
 
-      // Set up activity monitoring
-      this.setupActivityMonitoring();
+      // Start cross-tab sync
+      if (this.config.enableCrossTabSync) {
+        this.startCrossTabSync();
+      }
 
-      logger.info('Session initialized successfully', {
-        sessionId,
-        uid: user.uid,
-        expiresAt: session.expiresAt
-      });
-
-    } catch (error) {
-      const sessionError: AuthError = createAuthError(
-        'session/invalid',
-        'Failed to initialize session'
-      );
+      // Emit session started event
+      this.emit('session:started', session);
       
-      this.sessionState.error = sessionError;
-      throw createAuthError('session/invalid', sessionError.message);
+      logger.info('Session initialized', { sessionId, uid: user.uid });
+      
+    } catch (error) {
+      logger.error('Failed to initialize session', error);
+      throw createAuthError('session-init-failed', 'Failed to initialize session');
     }
   }
 
   /**
-   * Refreshes the current session
+   * Refresh the current session
    */
-  async refreshSession(): Promise<void> {
-    if (!this.sessionState.session) {
-      throw createAuthError('session/not-found', 'No active session to refresh');
+  async refreshSession(): Promise<AuthSession | null> {
+    if (!this.state.currentSession) {
+      return null;
     }
 
     try {
       const now = Date.now();
-      const updatedSession = {
-        ...this.sessionState.session,
+      const session = this.state.currentSession;
+      
+      // Check if session needs refresh
+      if (!this.needsRefresh(session)) {
+        return session;
+      }
+
+      // Create updated session
+      const refreshedSession: AuthSession = {
+        ...session,
         lastActivity: now,
         expiresAt: now + this.config.timeout
       };
 
-      this.sessionState.session = updatedSession;
-      this.sessionState.lastSyncAt = now;
-
-      if (this.config.persistSession) {
-        await this.persistSession(updatedSession);
-      }
-
-      logger.debug('Session refreshed', {
-        sessionId: updatedSession.sessionId,
-        expiresAt: updatedSession.expiresAt
-      });
-
-    } catch (error) {
-      const sessionError: AuthError = createAuthError(
-        'session/refresh-failed',
-        'Failed to refresh session'
-      );
+      // Store updated session
+      await this.storeSession(refreshedSession);
       
-      this.sessionState.error = sessionError;
-      throw createAuthError('session/refresh-failed', sessionError.message);
+      // Update state
+      this.state.currentSession = refreshedSession;
+      this.state.lastActivity = now;
+      this.state.sessions.set(session.sessionId, refreshedSession);
+
+      // Emit refresh event
+      this.emit('session:refreshed', refreshedSession);
+      
+      logger.debug('Session refreshed', { sessionId: session.sessionId });
+      return refreshedSession;
+      
+    } catch (error) {
+      logger.error('Failed to refresh session', error);
+      throw createAuthError('session-refresh-failed', 'Failed to refresh session');
     }
   }
 
   /**
-   * Validates the current session
+   * End the current session
    */
-  async validateSession(): Promise<boolean> {
-    const session = this.sessionState.session;
-    if (!session) return false;
-
-    const now = Date.now();
+  async endSession(reason: SessionEndReason = 'manual'): Promise<void> {
+    const session = this.state.currentSession;
     
-    // Check if session has expired
-    if (now > session.expiresAt) {
-      logger.warn('Session expired', {
-        sessionId: session.sessionId,
-        expiredAt: session.expiresAt,
-        currentTime: now
-      });
+    if (!session) {
+      return;
+    }
+
+    try {
+      // Update session flags
+      const endedSession: AuthSession = {
+        ...session,
+        flags: {
+          ...session.flags,
+          isActive: false
+        }
+      };
+
+      // Remove from storage
+      await this.removeSession(session.sessionId);
       
-      await this.endSession('expired');
+      // Clear internal state
+      this.state.currentSession = null;
+      this.state.isActive = false;
+      this.state.sessions.delete(session.sessionId);
+
+      // Stop tracking
+      this.stopActivityTracking();
+      this.stopCrossTabSync();
+
+      // Emit ended event
+      this.emit('session:ended', { session: endedSession, reason });
+      
+      logger.info('Session ended', { sessionId: session.sessionId, reason });
+      
+    } catch (error) {
+      logger.error('Failed to end session', error);
+      throw createAuthError('session-end-failed', 'Failed to end session');
+    }
+  }
+
+  /**
+   * Check if session is valid
+   */
+  isSessionValid(): boolean {
+    const session = this.state.currentSession;
+    
+    if (!session || !session.flags.isActive) {
       return false;
     }
 
-    // Check if session is within grace period
-    const timeToExpiry = session.expiresAt - now;
-    if (timeToExpiry < this.config.refreshThreshold) {
-      try {
-        await this.refreshSession();
-      } catch (error) {
-        logger.error('Failed to refresh session within grace period:', error);
+    const now = Date.now();
+    
+    // Check if expired
+    if (now > session.expiresAt) {
+      return false;
+    }
+
+    // Check idle timeout
+    if (this.config.idleTimeout && this.state.lastActivity) {
+      const idleTime = now - this.state.lastActivity;
+      if (idleTime > this.config.idleTimeout) {
         return false;
       }
     }
@@ -182,221 +249,336 @@ export class SessionService {
   }
 
   /**
-   * Ends the current session
-   */
-  async endSession(reason: SessionEndReason = 'manual'): Promise<void> {
-    const session = this.sessionState.session;
-    
-    if (session) {
-      logger.info('Ending session', {
-        sessionId: session.sessionId,
-        reason
-      });
-      
-      // Clean up timers
-      this.clearTimers();
-      
-      // Remove persisted session
-      if (this.config.persistSession) {
-        await this.removePersistentSession();
-      }
-    }
-
-    this.clearSession();
-  }
-
-  /**
-   * Clears the session state
-   */
-  clearSession(): void {
-    this.sessionState = this.initializeSessionState();
-    this.clearTimers();
-  }
-
-  /**
-   * Gets the current session state
-   */
-  getSessionState(): SessionState {
-    return { ...this.sessionState };
-  }
-
-  /**
-   * Updates user activity timestamp
+   * Update session activity
    */
   updateActivity(): void {
-    if (this.sessionState.session) {
-      this.sessionState.session.lastActivity = Date.now();
+    const now = Date.now();
+    this.state.lastActivity = now;
+
+    if (this.state.currentSession) {
+      this.state.currentSession.lastActivity = now;
+      
+      // Store updated session (debounced)
+      this.debouncedStoreSession();
       
       // Reset activity timeout
-      if (this.activityTimeout) {
-        clearTimeout(this.activityTimeout);
-        this.setupActivityTimeout();
-      }
+      this.resetActivityTimeout();
     }
   }
 
-  // ============================================================================
-  // PRIVATE METHODS
-  // ============================================================================
+  /**
+   * Get current session
+   */
+  getCurrentSession(): AuthSession | null {
+    return this.state.currentSession;
+  }
+
+  /**
+   * Get session state
+   */
+  getSessionState(): SessionState {
+    return { ...this.state };
+  }
+
+  /**
+   * Subscribe to session events
+   */
+  on(event: string, handler: Function): void {
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, new Set());
+    }
+    this.eventHandlers.get(event)!.add(handler);
+  }
+
+  /**
+   * Unsubscribe from session events
+   */
+  off(event: string, handler: Function): void {
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.delete(handler);
+    }
+  }
+
+  // Private methods
+  private emit(event: string, data: any): void {
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.forEach(handler => {
+        try {
+          handler(data);
+        } catch (error) {
+          logger.error('Session event handler error', { event, error });
+        }
+      });
+    }
+  }
 
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   private getDeviceInfo(): SessionDeviceInfo {
-    if (typeof window === 'undefined') {
-      return {
-        userAgent: 'server',
-        platform: 'web',
-        isMobile: false
-      };
-    }
+    const getPlatform = (): 'web' | 'mobile' | 'desktop' => {
+      if (typeof navigator === 'undefined') return 'web';
+      const userAgent = navigator.userAgent.toLowerCase();
+      if (userAgent.includes('mobile')) return 'mobile';
+      if (userAgent.includes('electron')) return 'desktop';
+      return 'web';
+    };
 
-    const userAgent = window.navigator.userAgent;
-    const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
-    
     return {
-      userAgent,
-      platform: 'web',
-      browser: this.getBrowserName(userAgent),
-      os: this.getOS(userAgent),
-      isMobile
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
+      platform: getPlatform(),
+      isMobile: getPlatform() === 'mobile',
+      language: typeof navigator !== 'undefined' ? navigator.language : 'en',
+      screen: typeof screen !== 'undefined' ? {
+        width: screen.width,
+        height: screen.height,
+        colorDepth: screen.colorDepth
+      } : undefined,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
     };
   }
 
-  private getBrowserName(userAgent: string): string {
-    if (userAgent.includes('Chrome')) return 'Chrome';
-    if (userAgent.includes('Firefox')) return 'Firefox';
-    if (userAgent.includes('Safari')) return 'Safari';
-    if (userAgent.includes('Edge')) return 'Edge';
-    return 'Unknown';
-  }
-
-  private getOS(userAgent: string): string {
-    if (userAgent.includes('Windows')) return 'Windows';
-    if (userAgent.includes('Mac')) return 'macOS';
-    if (userAgent.includes('Linux')) return 'Linux';
-    if (userAgent.includes('Android')) return 'Android';
-    if (userAgent.includes('iOS')) return 'iOS';
-    return 'Unknown';
-  }
-
-  private async getLocationInfo(): Promise<SessionLocation | undefined> {
-    // This would typically use IP geolocation service
-    // For now, return undefined
-    return undefined;
-  }
-
-  private async persistSession(session: AuthSession): Promise<void> {
+  private async getLocationInfo(): Promise<import('../types').SessionLocation | undefined> {
+    // Note: Location detection would require user permission and external service
+    // This is a placeholder implementation
     try {
-      const sessionData = {
-        session,
-        timestamp: Date.now()
+      // In a real implementation, this would use geolocation API or IP-based location
+      return undefined;
+    } catch (error) {
+      logger.debug('Location detection failed', error);
+      return undefined;
+    }
+  }
+
+  private needsRefresh(session: AuthSession): boolean {
+    const now = Date.now();
+    const timeUntilExpiry = session.expiresAt - now;
+    return timeUntilExpiry <= this.config.refreshThreshold;
+  }
+
+  private async storeSession(session: AuthSession): Promise<void> {
+    if (!this.config.persistSession) {
+      return;
+    }
+
+    try {
+      const storage = this.getStorage();
+      const sessionData = this.config.encryptStorage 
+        ? await this.encryptSessionData(session)
+        : JSON.stringify(session);
+      
+      storage.setItem(`${STORAGE_KEYS.SESSION_PREFIX}${session.sessionId}`, sessionData);
+      storage.setItem(STORAGE_KEYS.CURRENT_SESSION, session.sessionId);
+      
+    } catch (error) {
+      logger.error('Failed to store session', error);
+      throw createAuthError('session-storage-failed', 'Failed to store session');
+    }
+  }
+
+  private async removeSession(sessionId: string): Promise<void> {
+    try {
+      const storage = this.getStorage();
+      storage.removeItem(`${STORAGE_KEYS.SESSION_PREFIX}${sessionId}`);
+      
+      // Clear current session if it matches
+      const currentSessionId = storage.getItem(STORAGE_KEYS.CURRENT_SESSION);
+      if (currentSessionId === sessionId) {
+        storage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
+      }
+      
+    } catch (error) {
+      logger.error('Failed to remove session', error);
+    }
+  }
+
+  private getStorage(): Storage {
+    if (typeof window === 'undefined') {
+      // Server-side fallback
+      return {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+        clear: () => {},
+        length: 0,
+        key: () => null
       };
-      
-      if (typeof window !== 'undefined') {
-        const storageKey = STORAGE_KEYS.SESSION;
-        
-        if (this.config.storageType === 'localStorage') {
-          localStorage.setItem(storageKey, JSON.stringify(sessionData));
-        } else if (this.config.storageType === 'sessionStorage') {
-          sessionStorage.setItem(storageKey, JSON.stringify(sessionData));
-        }
-      }
-    } catch (error) {
-      logger.warn('Failed to persist session:', error);
     }
+
+    return this.config.storageType === 'sessionStorage' 
+      ? sessionStorage 
+      : localStorage;
   }
 
-  private async removePersistentSession(): Promise<void> {
-    try {
-      if (typeof window !== 'undefined') {
-        const storageKey = STORAGE_KEYS.SESSION;
-        localStorage.removeItem(storageKey);
-        sessionStorage.removeItem(storageKey);
-      }
-    } catch (error) {
-      logger.warn('Failed to remove persistent session:', error);
-    }
+  private async encryptSessionData(session: AuthSession): Promise<string> {
+    // Placeholder for encryption - would use actual encryption in production
+    return JSON.stringify(session);
   }
 
-  private setupActivityMonitoring(): void {
-    this.setupActivityTimeout();
-    
-    // Set up activity listeners (browser only)
+  private startActivityTracking(): void {
+    if (typeof window === 'undefined') return;
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    const throttledUpdate = this.throttle(() => this.updateActivity(), 1000);
+
+    events.forEach(event => {
+      document.addEventListener(event as keyof DocumentEventMap, throttledUpdate as EventListener, true);
+    });
+  }
+
+  private stopActivityTracking(): void {
+    // Implementation would remove event listeners
+  }
+
+  private startCrossTabSync(): void {
+    if (typeof window === 'undefined') return;
+
+    this.state.syncTimer = setInterval(() => {
+      this.syncWithOtherTabs();
+    }, this.config.syncInterval);
+
+    window.addEventListener('storage', this.handleStorageChange.bind(this));
+  }
+
+  private stopCrossTabSync(): void {
+    if (this.state.syncTimer) {
+      clearInterval(this.state.syncTimer);
+      this.state.syncTimer = null;
+    }
+
     if (typeof window !== 'undefined') {
-      const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-      const activityHandler = () => this.updateActivity();
-      
-      events.forEach(event => {
-        window.addEventListener(event, activityHandler, { passive: true });
-      });
+      window.removeEventListener('storage', this.handleStorageChange.bind(this));
     }
   }
 
-  private setupActivityTimeout(): void {
-    if (this.config.idleTimeout && this.config.idleTimeout > 0) {
-      this.activityTimeout = setTimeout(() => {
+  private syncWithOtherTabs(): void {
+    // Implementation for cross-tab session synchronization
+  }
+
+  private handleStorageChange(event: StorageEvent): void {
+    // Handle storage changes from other tabs
+  }
+
+  private resetActivityTimeout(): void {
+    // Implementation would reset idle timeout
+  }
+
+  private debouncedStoreSession(): void {
+    // Implementation would debounce session storage updates
+  }
+
+  private throttle(func: Function, limit: number): Function {
+    let inThrottle: boolean;
+    return function(this: any) {
+      const args = arguments;
+      const context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    };
+  }
+
+  private initializeEventHandlers(): void {
+    if (typeof window === 'undefined') return;
+
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.updateActivity();
+      }
+    });
+
+    // Handle beforeunload
+    window.addEventListener('beforeunload', () => {
+      if (this.state.currentSession && this.config.trackActivity) {
+        this.updateActivity();
+      }
+    });
+
+    // Handle idle detection
+    let idleTimer: NodeJS.Timeout;
+    
+    const resetIdleTimer = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
         logger.info('Session idle timeout reached');
         this.endSession('timeout');
       }, this.config.idleTimeout);
-    }
-  }
+    };
 
-  private setupCrossTabSync(): void {
-    if (this.config.syncInterval && this.config.syncInterval > 0) {
-      this.syncInterval = setInterval(() => {
-        this.syncSessionAcrossTabs();
-      }, this.config.syncInterval);
-    }
-
-    // Listen for storage events (browser only)
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', (event) => {
-        if (event.key === STORAGE_KEYS.SESSION) {
-          this.handleCrossTabSessionUpdate(event);
-        }
+    if (this.config.idleTimeout) {
+      const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+      events.forEach(event => {
+        document.addEventListener(event as keyof DocumentEventMap, resetIdleTimer as EventListener, true);
       });
-    }
-  }
-
-  private syncSessionAcrossTabs(): void {
-    // Implementation for cross-tab session synchronization
-    logger.debug('Syncing session across tabs');
-  }
-
-  private handleCrossTabSessionUpdate(event: StorageEvent): void {
-    // Handle session updates from other tabs
-    logger.debug('Handling cross-tab session update', { key: event.key });
-  }
-
-  private clearTimers(): void {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-      this.syncInterval = null;
-    }
-    
-    if (this.activityTimeout) {
-      clearTimeout(this.activityTimeout);
-      this.activityTimeout = null;
+      
+      resetIdleTimer();
     }
   }
 
   /**
-   * Destroys the session service and cleans up resources
+   * Clear the current session
+   */
+  clearSession(): void {
+    this.state = {
+      isAuthenticated: false,
+      isLoading: false,
+      session: null,
+      currentSession: null,
+      isActive: false,
+      lastActivity: null,
+      sessions: new Map(),
+      syncTimer: null,
+      tokens: { accessToken: null, refreshToken: null },
+      error: null,
+      lastSyncAt: 0
+    };
+  }
+
+  /**
+   * Validate the current session
+   */
+  async validateSession(): Promise<boolean> {
+    if (!this.state.currentSession) {
+      return false;
+    }
+
+    const now = Date.now();
+    if (now > this.state.currentSession.expiresAt) {
+      await this.endSession('expired');
+      return false;
+    }
+
+    // Check idle timeout
+    if (this.config.idleTimeout && this.state.lastActivity) {
+      const idleTime = now - this.state.lastActivity;
+      if (idleTime > this.config.idleTimeout) {
+        await this.endSession('timeout');
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Clean up resources when the service is destroyed
    */
   destroy(): void {
-    this.clearTimers();
-    this.clearSession();
-    logger.debug('SessionService destroyed');
+    if (this.state.syncTimer) {
+      clearInterval(this.state.syncTimer);
+      this.state.syncTimer = null;
+    }
+    this.eventHandlers.clear();
   }
 }
 
+/**
+ * Session end reasons
+ */
 type SessionEndReason = 'logout' | 'timeout' | 'expired' | 'manual' | 'security';
-type SessionLocation = {
-  ip: string;
-  country?: string;
-  region?: string;
-  city?: string;
-};
-

@@ -2,15 +2,34 @@
  * Validation Utilities
  * 
  * Validation functions for authentication data and user input.
+ * Uses Core utilities where available to avoid duplication.
  */
 
 import { VALIDATION_PATTERNS } from '../constants/auth.constants';
 import type { AuthConfig } from '../types';
 
+// Import Core utilities when available
+let coreValidateEmail: ((email: string) => boolean) | null = null;
+let coreValidatePhoneNumber: ((phone: string) => boolean) | null = null;
+
+try {
+  const coreUtils = require('@cvplus/core');
+  coreValidateEmail = coreUtils.validateEmail;
+  coreValidatePhoneNumber = coreUtils.validatePhoneNumber;
+} catch (error) {
+  // Core utilities not available, will use local implementations
+}
+
 /**
  * Validates an email address
+ * Uses Core utility if available, otherwise falls back to local implementation
  */
 export function validateEmail(email: string): boolean {
+  if (coreValidateEmail) {
+    return coreValidateEmail(email);
+  }
+  
+  // Fallback implementation
   if (!email || typeof email !== 'string') {
     return false;
   }
@@ -73,8 +92,14 @@ export function validatePassword(password: string, config?: AuthConfig): boolean
 
 /**
  * Validates a phone number
+ * Uses Core utility if available, otherwise falls back to local implementation
  */
 export function validatePhoneNumber(phone: string): boolean {
+  if (coreValidatePhoneNumber) {
+    return coreValidatePhoneNumber(phone);
+  }
+  
+  // Fallback implementation
   if (!phone || typeof phone !== 'string') {
     return false;
   }

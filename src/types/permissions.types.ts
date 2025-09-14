@@ -25,6 +25,8 @@ export interface Role {
   metadata?: Record<string, any>;
 }
 
+export type RoleName = 'guest' | 'user' | 'premium' | 'moderator' | 'admin' | 'super_admin';
+
 export interface UserRole {
   userId: string;
   roleId: string;

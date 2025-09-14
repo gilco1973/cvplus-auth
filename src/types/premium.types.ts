@@ -207,7 +207,7 @@ export interface PremiumStatus {
   gracePeriodEnd?: number;
 }
 
-export interface FeatureGate {
+export interface FeatureGateConfig {
   feature: keyof PremiumFeatures;
   required: {
     tier: PremiumTier;
