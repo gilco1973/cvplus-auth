@@ -4,7 +4,7 @@
  */
 
 import { AuthLogger } from '../logging/AuthLogger';
-import { LogLevel, LogDomain } from '@cvplus/core/logging';
+import { LogLevel, LogDomain } from '@cvplus/logging/backend';
 
 describe('AuthLogger Integration', () => {
   let authLogger: AuthLogger;

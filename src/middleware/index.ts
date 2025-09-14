@@ -100,8 +100,44 @@ export const authMiddleware = {
 };
 
 /**
+ * Authenticate user from Firebase Functions request
+ * Compatibility function for CV Processing and other submodules
+ */
+export async function authenticateUser(req: any): Promise<{
+  success: boolean;
+  userId?: string;
+  error?: string;
+}> {
+  try {
+    const authHeader = req.headers?.authorization;
+
+    if (!authHeader?.startsWith('Bearer ')) {
+      return {
+        success: false,
+        error: 'Missing or invalid authorization header'
+      };
+    }
+
+    const idToken = authHeader.substring(7);
+    const admin = await import('firebase-admin');
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    return {
+      success: true,
+      userId: decodedToken.uid
+    };
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return {
+      success: false,
+      error: 'Invalid token'
+    };
+  }
+}
+
+/**
  * Migration helpers for replacing old middleware patterns
- * 
+ *
  * These functions help migrate from old scattered patterns to consolidated middleware
  */
 export const migrationHelpers = {

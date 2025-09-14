@@ -8,14 +8,14 @@
 import {
   LoggerFactory,
   CorrelationService,
-  AuditTrail,
+  AuditTrailClass as AuditTrail,
   AuditAction,
   AuditEventType,
   LogLevel,
   LogDomain,
   globalAuditTrail,
   type Logger
-} from '@cvplus/logging';
+} from '@cvplus/core/logging';
 
 /**
  * Authentication event types
@@ -96,7 +96,7 @@ export class AuthLogger {
    * Log successful login
    */
   loginSuccess(context: AuthContext): string {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.info('User login successful', {
       event: AuthEventType.LOGIN_SUCCESS,
@@ -139,7 +139,7 @@ export class AuthLogger {
    * Log failed login attempt
    */
   loginFailure(context: AuthContext, reason: LoginResult, error?: Error): string {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.warn('User login failed', {
       event: AuthEventType.LOGIN_FAILURE,
@@ -190,7 +190,7 @@ export class AuthLogger {
    * Log user logout
    */
   logout(context: AuthContext): string {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.info('User logout', {
       event: AuthEventType.LOGOUT,
@@ -218,7 +218,7 @@ export class AuthLogger {
    * Log password change
    */
   passwordChange(context: AuthContext, success: boolean, error?: Error): string {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     if (success) {
       this.logger.info('Password changed successfully', {
@@ -266,7 +266,7 @@ export class AuthLogger {
     context: AuthContext,
     granted: boolean
   ): void {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.debug('Permission check performed', {
       event: AuthEventType.PERMISSION_CHECK,
@@ -295,7 +295,7 @@ export class AuthLogger {
    * Log role assignment
    */
   roleAssign(targetUserId: string, role: string, context: AuthContext): string {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.info('Role assigned to user', {
       event: AuthEventType.ROLE_ASSIGN,
@@ -331,7 +331,7 @@ export class AuthLogger {
     context: AuthContext,
     details: Record<string, any>
   ): string {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.error('Suspicious authentication activity detected', {
       event: AuthEventType.SUSPICIOUS_ACTIVITY,
@@ -367,7 +367,7 @@ export class AuthLogger {
    * Log MFA setup
    */
   mfaSetup(context: AuthContext, method: string, success: boolean): string {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.info('MFA setup attempted', {
       event: AuthEventType.MFA_SETUP,
@@ -396,7 +396,7 @@ export class AuthLogger {
    * Log session creation
    */
   sessionCreate(context: AuthContext): void {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.debug('Session created', {
       event: AuthEventType.SESSION_CREATE,
@@ -410,7 +410,7 @@ export class AuthLogger {
    * Log session destruction
    */
   sessionDestroy(context: AuthContext, reason: string): void {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.debug('Session destroyed', {
       event: AuthEventType.SESSION_DESTROY,
@@ -425,7 +425,7 @@ export class AuthLogger {
    * Log account lock
    */
   accountLock(context: AuthContext, reason: string): string {
-    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const correlationId = CorrelationService.getCurrentId();
 
     this.logger.warn('Account locked', {
       event: AuthEventType.ACCOUNT_LOCK,
@@ -452,7 +452,7 @@ export class AuthLogger {
   /**
    * Log with correlation context
    */
-  withCorrelation<T>(correlationId: string, callback: () => T): T {
+  withCorrelation<T>(correlationId: string, callback: () => T): T | Promise<T> {
     return CorrelationService.withCorrelationId(correlationId, callback);
   }
 
