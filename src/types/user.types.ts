@@ -116,3 +116,7 @@ export interface UserQuery {
 }
 
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'deleted';
+
+// Primary User type for cross-module compatibility
+// This is the main User interface that other modules should extend
+export type User = UserProfile;
