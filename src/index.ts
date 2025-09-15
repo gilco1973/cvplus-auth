@@ -185,4 +185,4 @@ export const VERSION = '1.0.0';
 export const MODULE_NAME = '@cvplus/auth';
 
 // Default configuration for easy setup
-export { defaultAuthConfig } from './constants/auth.constants';
+export { defaultAuthConfig } from './constants/auth.constants';export * from './services/session-checkpoint.service';
