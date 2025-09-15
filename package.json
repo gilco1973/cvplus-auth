@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@cvplus/core": "file:../core",
+    "@cvplus/logging": "file:../logging",
     "firebase": "^12.2.1",
     "firebase-admin": "^12.1.0",
     "lucide-react": "^0.542.0"

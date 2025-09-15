@@ -1,11 +1,11 @@
 // Session Checkpoint Service - Backend support for enhanced session management
 import * as admin from 'firebase-admin';
-import {
+import type {
   EnhancedSessionState,
   ProcessingCheckpoint,
-  QueuedAction,
-  CVStep
-} from '../types/enhanced-models';
+  QueuedAction
+} from '@cvplus/core';
+import { CVStep } from '@cvplus/core';
 
 export interface CheckpointMetadata {
   functionName: string;
@@ -50,7 +50,7 @@ export class SessionCheckpointService {
 
     // Store checkpoint in Firestore
     await this.saveCheckpoint(checkpoint);
-    
+
     // Update session with new checkpoint
     await this.addCheckpointToSession(sessionId, checkpoint);
 
@@ -65,7 +65,7 @@ export class SessionCheckpointService {
     executionTime?: number
   ): Promise<void> {
     const checkpointRef = this.db.collection('checkpoints').doc(checkpointId);
-    
+
     const updates: Partial<ProcessingCheckpoint> = {
       state: status,
       lastAttemptAt: new Date()
@@ -88,7 +88,7 @@ export class SessionCheckpointService {
 
     // Update session checkpoint list
     const checkpoint = await this.getCheckpoint(checkpointId);
-    if (checkpoint) {
+    if (checkpoint && checkpoint.sessionId) {
       await this.updateSessionCheckpoint(checkpoint.sessionId, checkpoint);
     }
   }
@@ -126,8 +126,8 @@ export class SessionCheckpointService {
     try {
       // Execute the function with stored parameters
       const result = await this.executeFunctionWithCheckpoint(
-        checkpoint.functionName,
-        checkpoint.parameters,
+        checkpoint.functionName ?? '',
+        checkpoint.parameters ?? {},
         checkpoint.sessionId
       );
 
@@ -156,7 +156,7 @@ export class SessionCheckpointService {
           errorMessage,
           executionTime
         );
-        
+
         // Schedule retry with exponential backoff
         await this.scheduleRetry(checkpointId, checkpoint.retryCount + 1);
       } else {
@@ -182,14 +182,14 @@ export class SessionCheckpointService {
     // Get all checkpoints after this one and mark them as pending
     const allCheckpoints = await this.getSessionCheckpoints(sessionId);
     const checkpointIndex = allCheckpoints.findIndex(cp => cp.id === checkpointId);
-    
+
     if (checkpointIndex === -1) {
       throw new Error(`Checkpoint ${checkpointId} not found in session`);
     }
 
     // Reset subsequent checkpoints
     const subsequentCheckpoints = allCheckpoints.slice(0, checkpointIndex);
-    
+
     for (const cp of subsequentCheckpoints) {
       if (cp.state === 'completed' || cp.state === 'failed') {
         await this.updateCheckpointStatus(cp.id, 'pending');
@@ -209,13 +209,13 @@ export class SessionCheckpointService {
     if (!session) return;
 
     const checkpoints = await this.getSessionCheckpoints(sessionId);
-    
+
     // Update session with checkpoint information
     session.processingCheckpoints = checkpoints;
-    
+
     // Update session progress based on checkpoints
     await this.updateSessionProgressFromCheckpoints(session);
-    
+
     // Save enhanced session
     await this.saveEnhancedSession(session);
   }
@@ -225,19 +225,19 @@ export class SessionCheckpointService {
     if (!session) return;
 
     const queuedActions = session.actionQueue || [];
-    const pendingActions = queuedActions.filter(action => 
-      action.attempts < action.maxAttempts && action.requiresNetwork
+    const pendingActions = queuedActions.filter((action: QueuedAction) =>
+      (action.attempts ?? 0) < (action.maxAttempts ?? 1) && action.requiresNetwork
     );
 
     for (const action of pendingActions) {
       try {
         await this.executeQueuedAction(action);
-        
+
         // Remove successful action from queue
-        session.actionQueue = session.actionQueue?.filter(a => a.id !== action.id) || [];
+        session.actionQueue = session.actionQueue?.filter((a: QueuedAction) => a.id !== action.id) || [];
       } catch (error) {
         // Increment retry count
-        action.attempts++;
+        action.attempts = (action.attempts ?? 0) + 1;
       }
     }
 
@@ -256,17 +256,17 @@ export class SessionCheckpointService {
   ): Promise<unknown> {
     // This would dynamically call the appropriate Firebase Function
     // Implementation depends on your specific function architecture
-    
+
     switch (functionName) {
       case 'generateCV':
         return this.executeGenerateCV(parameters, sessionId);
-      
+
       case 'generatePodcast':
         return this.executeGeneratePodcast(parameters, sessionId);
-      
+
       case 'generateVideo':
         return this.executeGenerateVideo(parameters, sessionId);
-      
+
       default:
         throw new Error(`Unknown function: ${functionName}`);
     }
@@ -302,15 +302,15 @@ export class SessionCheckpointService {
       case 'session_update':
         await this.handleSessionUpdateAction(action);
         break;
-      
+
       case 'form_save':
         await this.handleFormSaveAction(action);
         break;
-      
+
       case 'feature_toggle':
         await this.handleFeatureToggleAction(action);
         break;
-      
+
       default:
     }
   }
@@ -318,7 +318,7 @@ export class SessionCheckpointService {
   private async handleSessionUpdateAction(action: QueuedAction): Promise<void> {
     const { sessionId, updates } = action.payload || {};
     const session = await this.getEnhancedSession(sessionId);
-    
+
     if (session) {
       Object.assign(session, updates);
       await this.saveEnhancedSession(session);
@@ -333,7 +333,7 @@ export class SessionCheckpointService {
   private async handleFeatureToggleAction(action: QueuedAction): Promise<void> {
     const { sessionId, featureId, enabled } = action.payload || {};
     const session = await this.getEnhancedSession(sessionId);
-    
+
     if (session && session.featureStates && session.featureStates[featureId]) {
       session.featureStates[featureId].enabled = enabled;
       await this.saveEnhancedSession(session);
@@ -349,7 +349,7 @@ export class SessionCheckpointService {
     checkpoint: ProcessingCheckpoint
   ): Promise<void> {
     const sessionRef = this.db.collection('sessions').doc(sessionId);
-    
+
     await sessionRef.update({
       processingCheckpoints: admin.firestore.FieldValue.arrayUnion(checkpoint)
     });
@@ -363,13 +363,15 @@ export class SessionCheckpointService {
     if (!session) return;
 
     // Update the checkpoint in the session
-    const checkpointIndex = session.processingCheckpoints?.findIndex(
-      cp => cp.id === updatedCheckpoint.id
-    );
+    if (session.processingCheckpoints) {
+      const checkpointIndex = session.processingCheckpoints.findIndex(
+        (cp: ProcessingCheckpoint) => cp.id === updatedCheckpoint.id
+      );
 
-    if (checkpointIndex !== -1) {
-      session.processingCheckpoints[checkpointIndex] = updatedCheckpoint;
-      await this.saveEnhancedSession(session);
+      if (checkpointIndex !== -1) {
+        session.processingCheckpoints[checkpointIndex] = updatedCheckpoint;
+        await this.saveEnhancedSession(session);
+      }
     }
   }
 
@@ -384,26 +386,31 @@ export class SessionCheckpointService {
 
   private async updateSessionProgressFromCheckpoints(session: EnhancedSessionState): Promise<void> {
     // Update step progress based on checkpoint states
-    for (const checkpoint of session.processingCheckpoints || []) {
-      const stepProgress = session.stepProgress?.[checkpoint.stepId];
-      if (stepProgress) {
-        // Update substep progress based on checkpoint state
-        const relatedSubstep = stepProgress?.substeps.find(
-          s => s.id === checkpoint.functionName || s.name === checkpoint.functionName
-        );
-        
-        if (relatedSubstep) {
+    if (session.processingCheckpoints && session.stepProgress) {
+      for (const checkpoint of session.processingCheckpoints) {
+        const stepKey = checkpoint.stepId ?? checkpoint.step;
+
+        // Update progress percentage based on checkpoint completion
+        if (stepKey && Object.values(CVStep).includes(stepKey as CVStep)) {
+          const cvStep = stepKey as CVStep;
           switch (checkpoint.state) {
             case 'completed':
-              relatedSubstep.status = 'completed';
-              relatedSubstep.completedAt = checkpoint.completedAt;
+              session.stepProgress[cvStep] = 100;
               break;
             case 'failed':
-              relatedSubstep.status = 'error';
-              relatedSubstep.error = checkpoint.error;
+              // Keep existing progress, don't reset to 0
               break;
             case 'processing':
-              relatedSubstep.status = 'processing';
+              // Set to 50% if not already higher
+              if ((session.stepProgress[cvStep] || 0) < 50) {
+                session.stepProgress[cvStep] = 50;
+              }
+              break;
+            case 'pending':
+              // Set to 10% if not already started
+              if (!session.stepProgress[cvStep]) {
+                session.stepProgress[cvStep] = 10;
+              }
               break;
           }
         }
@@ -413,7 +420,7 @@ export class SessionCheckpointService {
 
   private async scheduleRetry(checkpointId: string, retryAttempt: number): Promise<void> {
     const delayMs = Math.pow(2, retryAttempt) * 1000; // Exponential backoff
-    
+
     // In a production environment, you'd use Cloud Tasks or similar for scheduling
     setTimeout(async () => {
       await this.executeCheckpoint(checkpointId);
@@ -427,7 +434,7 @@ export class SessionCheckpointService {
   private determinePriority(stepId: CVStep, featureId?: string): ProcessingCheckpoint['priority'] {
     // Core steps get higher priority
     const coreSteps: CVStep[] = [CVStep.INIT, CVStep.PARSE_CV, CVStep.ANALYZE_CONTENT];
-    
+
     if (coreSteps.includes(stepId)) {
       return 'high';
     }

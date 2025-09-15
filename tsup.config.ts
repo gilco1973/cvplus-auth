@@ -4,7 +4,12 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['cjs', 'esm'],
   target: 'es2020',
-  dts: true,
+  dts: {
+    compilerOptions: {
+      skipLibCheck: true,
+      rootDir: undefined,
+    }
+  },
   sourcemap: true,
   clean: true,
   external: [

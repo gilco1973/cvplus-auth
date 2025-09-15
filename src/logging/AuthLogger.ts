@@ -15,7 +15,7 @@ import {
   LogDomain,
   globalAuditTrail,
   type Logger
-} from '@cvplus/core/logging';
+} from '@cvplus/logging/backend';
 
 /**
  * Authentication event types
