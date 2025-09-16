@@ -82,7 +82,7 @@ export const usePermissions = (): UsePermissionsReturn => {
     // Determine user role from available data
     // This is a simplified implementation - in practice, role should come from user claims or profile
     let userRole: RoleName = 'user';
-    if (state.premiumFeatures) userRole = 'premium';
+    // Premium role determination removed - moved to @cvplus/premium module
     if (permissions.some(p => p.name.includes('admin'))) userRole = 'admin';
     
     const userRoleLevel = roleHierarchy[userRole] || 0;
@@ -92,7 +92,8 @@ export const usePermissions = (): UsePermissionsReturn => {
   };
   
   const checkFeatureAccess = (feature: string): boolean => {
-    return actions.hasPremiumFeature(feature);
+    // Premium feature access removed - moved to @cvplus/premium module
+    return false;
   };
   
   const canAccess = (resource: string, action: string = 'read'): boolean => {

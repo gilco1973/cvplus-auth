@@ -9,7 +9,8 @@
  */
 
 import { useAuthContext } from '../contexts/AuthContext';
-import { AuthenticatedUser, UserProfile, PremiumFeatures } from '../../types';
+import { AuthenticatedUser, UserProfile } from '../../types';
+// PremiumFeatures removed - moved to @cvplus/premium module
 
 export interface UseAuthReturn {
   // State
@@ -19,7 +20,7 @@ export interface UseAuthReturn {
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
-  premiumFeatures: PremiumFeatures | null;
+  // premiumFeatures removed - moved to @cvplus/premium module
   
   // Actions
   signIn: (email: string, password: string) => Promise<AuthenticatedUser>;
@@ -33,9 +34,7 @@ export interface UseAuthReturn {
   // Permission utilities
   hasPermission: (permission: string) => boolean;
   
-  // Premium utilities
-  hasPremiumFeature: (feature: string) => boolean;
-  isPremium: boolean;
+  // Premium utilities removed - moved to @cvplus/premium module
 }
 
 /**
@@ -73,7 +72,7 @@ export const useAuth = (): UseAuthReturn => {
     isLoading: state.isLoading,
     isInitialized: state.isInitialized,
     error: state.error,
-    premiumFeatures: state.premiumFeatures,
+    // premiumFeatures removed - handled by @cvplus/premium module
     
     // Actions
     signIn: actions.signIn,
@@ -87,8 +86,6 @@ export const useAuth = (): UseAuthReturn => {
     // Permission utilities
     hasPermission: actions.hasPermission,
     
-    // Premium utilities
-    hasPremiumFeature: actions.hasPremiumFeature,
-    isPremium: !!state.premiumFeatures
+    // Premium functionality removed - moved to @cvplus/premium module
   };
 };

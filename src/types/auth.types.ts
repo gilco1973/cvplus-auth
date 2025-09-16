@@ -7,8 +7,9 @@
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { AuthenticatedUser, UserProfile } from './user.types';
 import type { AuthSession, SessionState } from './session.types';
-import type { PremiumStatus } from './premium.types';
 import type { StandardPermissions } from './permissions.types';
+
+// Premium functionality removed - handled by @cvplus/premium module (Layer 2)
 
 export interface AuthState {
   // Core authentication state
@@ -23,9 +24,8 @@ export interface AuthState {
   
   // Session management
   session: SessionState;
-  
-  // Premium and permissions
-  premium: PremiumStatus;
+
+  // Permissions (premium handled by @cvplus/premium)
   permissions: StandardPermissions;
   
   // Error handling
@@ -167,8 +167,7 @@ export interface AuthEvents {
   // Error events
   onAuthError: (error: AuthError) => void;
   
-  // Premium events
-  onPremiumStatusChanged: (status: PremiumStatus) => void;
+  // Premium events removed - moved to @cvplus/premium module
   
   // Profile events
   onProfileUpdated: (profile: UserProfile) => void;
@@ -221,11 +220,4 @@ export interface UseSessionResult {
   end: () => Promise<void>;
 }
 
-export interface UsePremiumResult {
-  status: PremiumStatus;
-  hasAccess: (feature: string) => boolean;
-  usage: PremiumStatus['usage'];
-  refresh: () => Promise<void>;
-  isLoading: boolean;
-  error: AuthError | null;
-}
+// UsePremiumResult interface removed - moved to @cvplus/premium module

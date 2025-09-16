@@ -11,7 +11,8 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { User } from 'firebase/auth';
 import { AuthService } from '../../services/auth.service';
-import { UserProfile, Permission, PremiumFeatures, AuthenticatedUser } from '../../types';
+import { UserProfile, Permission, AuthenticatedUser } from '../../types';
+// PremiumFeatures removed - moved to @cvplus/premium module
 
 // ============================================================================
 // TYPES
@@ -24,7 +25,7 @@ export interface AuthContextState {
   isLoading: boolean;
   isAuthenticated: boolean;
   permissions: Permission[];
-  premiumFeatures: PremiumFeatures | null;
+  // premiumFeatures removed - moved to @cvplus/premium module
   error: string | null;
   isInitialized: boolean;
 }
@@ -37,7 +38,7 @@ export interface AuthContextActions {
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   refreshSession: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
-  hasPremiumFeature: (feature: string) => boolean;
+  // hasPremiumFeature removed - moved to @cvplus/premium module
   clearError: () => void;
 }
 
@@ -55,7 +56,7 @@ type AuthAction =
   | { type: 'SET_USER'; payload: AuthenticatedUser | null }
   | { type: 'SET_PROFILE'; payload: UserProfile | null }
   | { type: 'SET_PERMISSIONS'; payload: Permission[] }
-  | { type: 'SET_PREMIUM_FEATURES'; payload: PremiumFeatures | null }
+  // SET_PREMIUM_FEATURES action removed - moved to @cvplus/premium module
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_INITIALIZED'; payload: boolean }
   | { type: 'CLEAR_ERROR' };
@@ -66,7 +67,7 @@ const initialState: AuthContextState = {
   isLoading: true,
   isAuthenticated: false,
   permissions: [],
-  premiumFeatures: null,
+  // premiumFeatures removed - moved to @cvplus/premium module
   error: null,
   isInitialized: false
 };
@@ -90,8 +91,7 @@ function authReducer(state: AuthContextState, action: AuthAction): AuthContextSt
     case 'SET_PERMISSIONS':
       return { ...state, permissions: action.payload };
     
-    case 'SET_PREMIUM_FEATURES':
-      return { ...state, premiumFeatures: action.payload };
+    // SET_PREMIUM_FEATURES case removed - moved to @cvplus/premium module
     
     case 'SET_ERROR':
       return { ...state, error: action.payload, isLoading: false };
@@ -223,7 +223,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       dispatch({ type: 'SET_USER', payload: null });
       dispatch({ type: 'SET_PROFILE', payload: null });
       dispatch({ type: 'SET_PERMISSIONS', payload: [] });
-      dispatch({ type: 'SET_PREMIUM_FEATURES', payload: null });
+      // Premium features dispatch removed - moved to @cvplus/premium module
       
     } catch (error: any) {
       setError(error);
@@ -274,12 +274,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     return state.permissions.some(p => p.name === permission);
   };
 
-  const hasPremiumFeature = (feature: string): boolean => {
-    if (!state.premiumFeatures) return false;
-    const featureKey = feature as keyof PremiumFeatures;
-    const featureAccess = state.premiumFeatures[featureKey];
-    return featureAccess && typeof featureAccess === 'object' && 'enabled' in featureAccess ? featureAccess.enabled : false;
-  };
+  // hasPremiumFeature method removed - moved to @cvplus/premium module
 
   // ============================================================================
   // EFFECTS
@@ -302,7 +297,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           } else {
             dispatch({ type: 'SET_PROFILE', payload: null });
             dispatch({ type: 'SET_PERMISSIONS', payload: [] });
-            dispatch({ type: 'SET_PREMIUM_FEATURES', payload: null });
+            // Premium features dispatch removed - moved to @cvplus/premium module
           }
           
           dispatch({ type: 'SET_INITIALIZED', payload: true });
@@ -355,7 +350,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       updateProfile,
       refreshSession,
       hasPermission,
-      hasPremiumFeature,
+      // hasPremiumFeature removed - moved to @cvplus/premium module
       clearError
     }
   };

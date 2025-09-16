@@ -11,31 +11,9 @@
 // Export all types, resolving conflicts by prioritizing error.types for error definitions
 export * from './user.types';
 export * from './permissions.types';
-// Export specific premium types to avoid component name conflicts
-export type { 
-  PremiumSubscription,
-  SubscriptionStatus, 
-  PremiumTier, 
-  PremiumFeatures, 
-  FeatureAccess,
-  FeatureLimit,
-  FeatureRestriction,
-  BillingInfo,
-  PaymentMethod,
-  BillingCycle,
-  MonetaryAmount,
-  Invoice,
-  UsageMetrics,
-  DailyUsage,
-  SubscriptionMetadata,
-  PremiumPlan,
-  PlanLimits,
-  SubscriptionChange,
-  FeatureUsageEvent,
-  PremiumStatus,
-  FeatureGateConfig,
-  UsageAlert
-} from './premium.types';
+// NOTE: Premium types moved to @cvplus/premium submodule
+// Auth module should not handle premium functionality (Layer 1 dependency rules)
+
 export * from './config.types';
 
 // Export session types excluding conflicting ones

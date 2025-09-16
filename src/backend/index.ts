@@ -105,6 +105,11 @@ export {
 } from '../services/middleware-factory.service';
 
 // ============================================================================
+// USER LANGUAGE MANAGEMENT FUNCTIONS (moved from i18n)
+// ============================================================================
+// User language preference management functions removed - moved to @cvplus/i18n module
+
+// ============================================================================
 // HEALTH CHECK FUNCTION
 // ============================================================================
 // Simple auth health check for deployment validation

@@ -10,7 +10,7 @@
 
 import React, { ReactNode } from 'react';
 import { usePermissions } from '../hooks/usePermissions';
-import { usePremium } from '../hooks/usePremium';
+// usePremium removed - premium checks moved to @cvplus/premium module
 import type { RoleName } from '../types';
 
 export interface PermissionGateProps {
@@ -59,11 +59,12 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
     hasRole 
   } = usePermissions();
   
-  const { hasFeature } = usePremium();
+  // Premium feature checking removed - handled by @cvplus/premium module
   
   // Helper function to check if user has all required features
   const hasAllFeatures = (features: string[]): boolean => {
-    return features.every(feature => hasFeature(feature));
+    // Feature checking delegated to @cvplus/premium module
+    return false; // Default to false - external modules should handle feature checks
   };
 
   // Check all conditions
@@ -129,14 +130,7 @@ export const ModeratorOnly: React.FC<{ children: ReactNode; fallback?: ReactNode
   </PermissionGate>
 );
 
-export const PremiumOnly: React.FC<{ children: ReactNode; fallback?: ReactNode }> = ({
-  children,
-  fallback
-}) => (
-  <PermissionGate role="premium" fallback={fallback}>
-    {children}
-  </PermissionGate>
-);
+// PremiumOnly component removed - moved to @cvplus/premium module
 
 export const FeatureGate: React.FC<{ 
   feature: string; 

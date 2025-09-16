@@ -5,6 +5,7 @@
  * Provides domain-specific logging methods for security and audit compliance
  */
 
+// Import logging directly from Layer 0 (correct architectural dependency)
 import {
   LoggerFactory,
   CorrelationService,
@@ -77,7 +78,7 @@ export interface AuthContext {
 }
 
 /**
- * Specialized authentication logger
+ * Specialized authentication logger using CVPlus logging system
  */
 export class AuthLogger {
   private readonly logger: Logger;
@@ -86,464 +87,182 @@ export class AuthLogger {
   constructor() {
     this.logger = LoggerFactory.createLogger(this.packageName, {
       level: LogLevel.INFO,
-      enableConsole: true,
-      enableFirebase: true,
-      enablePiiRedaction: true
+      domain: LogDomain.AUTH
     });
   }
 
   /**
-   * Log successful login
+   * Log authentication events
    */
-  loginSuccess(context: AuthContext): string {
-    const correlationId = CorrelationService.getCurrentId();
+  logAuthEvent(eventType: AuthEventType, context: Partial<AuthContext>, details?: any): void {
+    const correlationId = CorrelationService.getCurrentCorrelationId();
+    const auditAction = this.mapEventTypeToAuditAction(eventType);
 
-    this.logger.info('User login successful', {
-      event: AuthEventType.LOGIN_SUCCESS,
-      userId: context.userId,
-      userEmail: context.userEmail,
-      sessionId: context.sessionId,
-      method: context.method,
-      provider: context.provider,
-      mfaEnabled: context.mfaEnabled,
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-      location: context.location,
-      correlationId
-    });
-
-    // Create audit trail entry
-    return globalAuditTrail.logEvent(
-      AuditEventType.USER_LOGIN,
-      AuditAction.LOGIN,
-      {
-        userId: context.userId,
-        userEmail: context.userEmail,
-        sessionId: context.sessionId,
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-        result: 'SUCCESS',
-        description: `User ${context.userEmail} logged in successfully`,
-        context: {
-          method: context.method,
-          provider: context.provider,
-          mfaEnabled: context.mfaEnabled,
-          location: context.location
-        },
-        complianceTags: ['auth', 'login', 'gdpr']
-      }
-    );
-  }
-
-  /**
-   * Log failed login attempt
-   */
-  loginFailure(context: AuthContext, reason: LoginResult, error?: Error): string {
-    const correlationId = CorrelationService.getCurrentId();
-
-    this.logger.warn('User login failed', {
-      event: AuthEventType.LOGIN_FAILURE,
-      userId: context.userId,
-      userEmail: context.userEmail,
-      reason,
-      loginAttempts: context.loginAttempts,
-      method: context.method,
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-      location: context.location,
+    const metadata = {
+      ...context,
+      details,
       correlationId,
-      error: error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : undefined
-    });
+      eventType,
+      auditAction
+    };
 
-    // Create audit trail entry for failed login
-    return globalAuditTrail.logEvent(
-      AuditEventType.USER_LOGIN_FAILED,
-      AuditAction.LOGIN,
-      {
-        userId: context.userId,
-        userEmail: context.userEmail,
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-        result: 'FAILURE',
-        description: `Login failed for ${context.userEmail}: ${reason}`,
-        context: {
-          reason,
-          method: context.method,
-          loginAttempts: context.loginAttempts,
-          location: context.location
-        },
-        error: error ? {
-          code: reason,
-          message: error.message,
-          stack: error.stack
-        } : undefined,
-        complianceTags: ['auth', 'security', 'failed_login']
-      }
-    );
-  }
-
-  /**
-   * Log user logout
-   */
-  logout(context: AuthContext): string {
-    const correlationId = CorrelationService.getCurrentId();
-
-    this.logger.info('User logout', {
-      event: AuthEventType.LOGOUT,
-      userId: context.userId,
-      userEmail: context.userEmail,
-      sessionId: context.sessionId,
-      correlationId
-    });
-
-    return globalAuditTrail.logEvent(
-      AuditEventType.USER_LOGOUT,
-      AuditAction.LOGOUT,
-      {
-        userId: context.userId,
-        userEmail: context.userEmail,
-        sessionId: context.sessionId,
-        result: 'SUCCESS',
-        description: `User ${context.userEmail} logged out`,
-        complianceTags: ['auth', 'logout']
-      }
-    );
-  }
-
-  /**
-   * Log password change
-   */
-  passwordChange(context: AuthContext, success: boolean, error?: Error): string {
-    const correlationId = CorrelationService.getCurrentId();
-
-    if (success) {
-      this.logger.info('Password changed successfully', {
-        event: AuthEventType.PASSWORD_CHANGE,
-        userId: context.userId,
-        userEmail: context.userEmail,
-        correlationId
-      });
-    } else {
-      this.logger.warn('Password change failed', {
-        event: AuthEventType.PASSWORD_CHANGE,
-        userId: context.userId,
-        userEmail: context.userEmail,
-        correlationId,
-        error: error ? {
-          name: error.name,
-          message: error.message
-        } : undefined
-      });
+    // Log to standard logger
+    switch (eventType) {
+      case AuthEventType.LOGIN_SUCCESS:
+      case AuthEventType.LOGOUT:
+      case AuthEventType.TOKEN_REFRESH:
+        this.logger.info(`Auth Event: ${eventType}`, metadata);
+        break;
+      case AuthEventType.LOGIN_FAILURE:
+      case AuthEventType.ACCOUNT_LOCK:
+      case AuthEventType.SUSPICIOUS_ACTIVITY:
+        this.logger.warn(`Security Event: ${eventType}`, metadata);
+        break;
+      default:
+        this.logger.info(`Auth Event: ${eventType}`, metadata);
     }
 
-    return globalAuditTrail.logEvent(
-      AuditEventType.USER_PASSWORD_CHANGED,
-      AuditAction.UPDATE,
-      {
+    // Add to audit trail for security events
+    if (auditAction && context.userId) {
+      globalAuditTrail.addEvent({
         userId: context.userId,
-        userEmail: context.userEmail,
-        result: success ? 'SUCCESS' : 'FAILURE',
-        description: `Password change ${success ? 'successful' : 'failed'} for ${context.userEmail}`,
-        error: error ? {
-          code: 'PASSWORD_CHANGE_FAILED',
-          message: error.message
-        } : undefined,
-        complianceTags: ['auth', 'password', 'security']
-      }
-    );
+        action: auditAction,
+        resourceType: 'authentication',
+        resourceId: context.sessionId || 'unknown',
+        metadata: {
+          eventType,
+          ...details
+        },
+        correlationId
+      });
+    }
   }
 
   /**
-   * Log permission check
+   * Log login attempts
    */
-  permissionCheck(
-    permission: string,
-    resource: string,
-    context: AuthContext,
-    granted: boolean
-  ): void {
-    const correlationId = CorrelationService.getCurrentId();
+  logLoginAttempt(userEmail: string, result: LoginResult, context: Partial<AuthContext> = {}): void {
+    const eventType = result === LoginResult.SUCCESS ? AuthEventType.LOGIN_SUCCESS : AuthEventType.LOGIN_FAILURE;
 
-    this.logger.debug('Permission check performed', {
-      event: AuthEventType.PERMISSION_CHECK,
-      userId: context.userId,
+    this.logAuthEvent(eventType, {
+      ...context,
+      userEmail,
+      loginResult: result
+    });
+  }
+
+  /**
+   * Log session events
+   */
+  logSessionEvent(eventType: AuthEventType.SESSION_CREATE | AuthEventType.SESSION_DESTROY, context: Partial<AuthContext>): void {
+    this.logAuthEvent(eventType, context);
+  }
+
+  /**
+   * Log permission checks
+   */
+  logPermissionCheck(userId: string, permission: string, granted: boolean, context: Partial<AuthContext> = {}): void {
+    this.logAuthEvent(AuthEventType.PERMISSION_CHECK, {
+      ...context,
+      userId,
       permission,
-      resource,
-      granted,
-      roles: context.roles,
-      correlationId
+      granted
     });
-
-    if (!granted) {
-      // Log permission denied as a warning
-      this.logger.warn('Permission denied', {
-        userId: context.userId,
-        permission,
-        resource,
-        roles: context.roles,
-        ipAddress: context.ipAddress,
-        correlationId
-      });
-    }
-  }
-
-  /**
-   * Log role assignment
-   */
-  roleAssign(targetUserId: string, role: string, context: AuthContext): string {
-    const correlationId = CorrelationService.getCurrentId();
-
-    this.logger.info('Role assigned to user', {
-      event: AuthEventType.ROLE_ASSIGN,
-      adminUserId: context.userId,
-      targetUserId,
-      role,
-      correlationId
-    });
-
-    return globalAuditTrail.logEvent(
-      AuditEventType.USER_PERMISSION_GRANTED,
-      AuditAction.UPDATE,
-      {
-        userId: context.userId,
-        result: 'SUCCESS',
-        resource: `user:${targetUserId}`,
-        description: `Role '${role}' assigned to user ${targetUserId}`,
-        context: {
-          targetUserId,
-          role,
-          assignedBy: context.userId
-        },
-        complianceTags: ['auth', 'role', 'permission']
-      }
-    );
   }
 
   /**
    * Log suspicious activity
    */
-  suspiciousActivity(
-    activityType: string,
-    context: AuthContext,
-    details: Record<string, any>
-  ): string {
-    const correlationId = CorrelationService.getCurrentId();
+  logSuspiciousActivity(description: string, context: Partial<AuthContext>): void {
+    const correlationId = CorrelationService.getCurrentCorrelationId();
 
-    this.logger.error('Suspicious authentication activity detected', {
-      event: AuthEventType.SUSPICIOUS_ACTIVITY,
-      activityType,
-      userId: context.userId,
-      userEmail: context.userEmail,
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-      details,
+    this.logger.warn(`Suspicious Activity: ${description}`, {
+      ...context,
       correlationId
     });
 
-    return globalAuditTrail.logEvent(
-      AuditEventType.SECURITY_BREACH_DETECTED,
-      AuditAction.ACCESS,
-      {
+    // Add to audit trail
+    if (context.userId) {
+      globalAuditTrail.addEvent({
         userId: context.userId,
-        userEmail: context.userEmail,
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-        result: 'FAILURE',
-        description: `Suspicious activity: ${activityType}`,
-        context: {
-          activityType,
-          ...details
+        action: AuditAction.SECURITY_VIOLATION,
+        resourceType: 'authentication',
+        resourceId: context.sessionId || 'unknown',
+        metadata: {
+          description,
+          ...context
         },
-        complianceTags: ['security', 'suspicious', 'threat']
-      }
-    );
+        correlationId
+      });
+    }
   }
 
   /**
-   * Log MFA setup
+   * Log security events
    */
-  mfaSetup(context: AuthContext, method: string, success: boolean): string {
-    const correlationId = CorrelationService.getCurrentId();
+  logSecurityEvent(message: string, context: Partial<AuthContext> = {}): void {
+    const correlationId = CorrelationService.getCurrentCorrelationId();
 
-    this.logger.info('MFA setup attempted', {
-      event: AuthEventType.MFA_SETUP,
-      userId: context.userId,
-      userEmail: context.userEmail,
-      method,
-      success,
+    this.logger.warn(`Security Event: ${message}`, {
+      ...context,
       correlationId
     });
 
-    return globalAuditTrail.logEvent(
-      AuditEventType.USER_PASSWORD_CHANGED, // Using closest available type
-      AuditAction.CONFIGURE,
-      {
+    // Add to audit trail
+    if (context.userId) {
+      globalAuditTrail.addEvent({
         userId: context.userId,
-        userEmail: context.userEmail,
-        result: success ? 'SUCCESS' : 'FAILURE',
-        description: `MFA ${method} setup ${success ? 'completed' : 'failed'}`,
-        context: { method },
-        complianceTags: ['auth', 'mfa', 'security']
-      }
-    );
+        action: AuditAction.SECURITY_VIOLATION,
+        resourceType: 'authentication',
+        resourceId: context.sessionId || 'unknown',
+        metadata: {
+          message,
+          ...context
+        },
+        correlationId
+      });
+    }
   }
 
   /**
-   * Log session creation
+   * Log errors with context
    */
-  sessionCreate(context: AuthContext): void {
-    const correlationId = CorrelationService.getCurrentId();
+  logError(error: Error, context: Partial<AuthContext> = {}): void {
+    const correlationId = CorrelationService.getCurrentCorrelationId();
 
-    this.logger.debug('Session created', {
-      event: AuthEventType.SESSION_CREATE,
-      userId: context.userId,
-      sessionId: context.sessionId,
+    this.logger.error(`Auth Error: ${error.message}`, {
+      ...context,
+      error: error.stack,
       correlationId
     });
   }
 
   /**
-   * Log session destruction
+   * Map authentication event types to audit actions
    */
-  sessionDestroy(context: AuthContext, reason: string): void {
-    const correlationId = CorrelationService.getCurrentId();
-
-    this.logger.debug('Session destroyed', {
-      event: AuthEventType.SESSION_DESTROY,
-      userId: context.userId,
-      sessionId: context.sessionId,
-      reason,
-      correlationId
-    });
-  }
-
-  /**
-   * Log account lock
-   */
-  accountLock(context: AuthContext, reason: string): string {
-    const correlationId = CorrelationService.getCurrentId();
-
-    this.logger.warn('Account locked', {
-      event: AuthEventType.ACCOUNT_LOCK,
-      userId: context.userId,
-      userEmail: context.userEmail,
-      reason,
-      correlationId
-    });
-
-    return globalAuditTrail.logEvent(
-      AuditEventType.SYSTEM_USER_DELETED, // Using closest available type
-      AuditAction.UPDATE,
-      {
-        userId: context.userId,
-        userEmail: context.userEmail,
-        result: 'SUCCESS',
-        description: `Account locked: ${reason}`,
-        context: { reason },
-        complianceTags: ['auth', 'security', 'account_lock']
-      }
-    );
-  }
-
-  /**
-   * Log with correlation context
-   */
-  withCorrelation<T>(correlationId: string, callback: () => T): T | Promise<T> {
-    return CorrelationService.withCorrelationId(correlationId, callback);
-  }
-
-  /**
-   * Create child logger with additional context
-   */
-  createChildLogger(context: Partial<AuthContext>): AuthLogger {
-    // For now, return the same logger
-    // In a full implementation, you'd create a logger with bound context
-    return this;
-  }
-
-  /**
-   * Get logger statistics
-   */
-  getStats(): {
-    totalLogs: number;
-    logsByLevel: Record<string, number>;
-    recentActivity: Date;
-  } {
-    // Placeholder implementation
-    return {
-      totalLogs: 0,
-      logsByLevel: {},
-      recentActivity: new Date()
-    };
+  private mapEventTypeToAuditAction(eventType: AuthEventType): AuditAction | null {
+    switch (eventType) {
+      case AuthEventType.LOGIN_SUCCESS:
+        return AuditAction.LOGIN;
+      case AuthEventType.LOGOUT:
+        return AuditAction.LOGOUT;
+      case AuthEventType.LOGIN_FAILURE:
+        return AuditAction.LOGIN_FAILED;
+      case AuthEventType.PASSWORD_CHANGE:
+        return AuditAction.PASSWORD_CHANGE;
+      case AuthEventType.ACCOUNT_LOCK:
+        return AuditAction.ACCOUNT_LOCK;
+      case AuthEventType.ACCOUNT_UNLOCK:
+        return AuditAction.ACCOUNT_UNLOCK;
+      case AuthEventType.ROLE_ASSIGN:
+        return AuditAction.ROLE_ASSIGNMENT;
+      case AuthEventType.SUSPICIOUS_ACTIVITY:
+        return AuditAction.SECURITY_VIOLATION;
+      default:
+        return null;
+    }
   }
 }
 
-/**
- * Global auth logger instance
- */
+// Default auth logger instance
 export const authLogger = new AuthLogger();
-
-/**
- * Convenience functions for common auth logging scenarios
- */
-export const authLogging = {
-  /**
-   * Log user login attempt
-   */
-  loginAttempt: (userEmail: string, context: Partial<AuthContext> = {}) => {
-    return authLogger.loginSuccess({
-      userEmail,
-      ...context
-    });
-  },
-
-  /**
-   * Log failed login
-   */
-  loginFailed: (userEmail: string, reason: LoginResult, context: Partial<AuthContext> = {}) => {
-    return authLogger.loginFailure({
-      userEmail,
-      ...context
-    }, reason);
-  },
-
-  /**
-   * Log permission denied
-   */
-  permissionDenied: (permission: string, resource: string, context: Partial<AuthContext> = {}) => {
-    authLogger.permissionCheck(permission, resource, context as AuthContext, false);
-  },
-
-  /**
-   * Log security incident
-   */
-  securityIncident: (type: string, details: Record<string, any>, context: Partial<AuthContext> = {}) => {
-    return authLogger.suspiciousActivity(type, context as AuthContext, details);
-  }
-};
-
-/**
- * Auth logger middleware for Express
- */
-export const authLoggerMiddleware = (req: any, res: any, next: any) => {
-  // Add auth context to request
-  req.authLogger = authLogger;
-  req.authContext = {
-    ipAddress: req.ip || req.connection.remoteAddress,
-    userAgent: req.get('User-Agent'),
-    sessionId: req.sessionID,
-    userId: req.user?.id,
-    userEmail: req.user?.email
-  };
-
-  next();
-};
-
-/**
- * Default export
- */
-export default AuthLogger;

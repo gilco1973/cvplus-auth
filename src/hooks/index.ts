@@ -9,7 +9,7 @@
 
 export { useAuth } from './useAuth';
 export { usePermissions } from './usePermissions';
-export { usePremium } from './usePremium';
+// usePremium removed - moved to @cvplus/premium module
 export { useSession } from './useSession';
 export { useGoogleAuth } from './useGoogleAuth';
 
@@ -19,5 +19,5 @@ export { useAuthContext } from '../context/AuthContext';
 // Type exports for better developer experience
 export type { UseAuthReturn } from './useAuth';
 export type { UsePermissionsReturn } from './usePermissions';
-export type { UsePremiumReturn } from './usePremium';
+// UsePremiumReturn type removed - moved to @cvplus/premium module
 export type { UseGoogleAuthReturn } from './useGoogleAuth';

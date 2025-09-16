@@ -20,8 +20,8 @@ export { AuthService } from './services/auth.service';
 export { TokenService } from './services/token.service';
 export { SessionService } from './services/session.service';
 export { PermissionsService } from './services/permissions.service';
-export { PremiumService } from './services/premium.service';
-export { CalendarService } from './services/calendar.service';
+// NOTE: PremiumService moved to @cvplus/premium submodule
+// NOTE: CalendarService moved to @cvplus/core/integrations submodule
 
 // ============================================================================
 // CONSOLIDATED BACKEND SERVICES (Phase 4 Deduplication)
@@ -121,7 +121,7 @@ export {
 // ============================================================================
 export * from './constants/auth.constants';
 export * from './constants/permissions.constants';
-export * from './constants/premium.constants';
+// NOTE: Premium constants moved to @cvplus/premium submodule
 
 // ============================================================================
 // FRONTEND COMPONENTS & HOOKS (Client-side React)
@@ -140,7 +140,7 @@ export * from './components';
 
 // Legacy compatibility exports for smooth migration from root repository
 export { useAuth as useLegacyAuth } from './hooks/useAuth';
-export { usePremium as useLegacyPremium } from './hooks/usePremium';
+// usePremium removed - moved to @cvplus/premium module
 export { AuthProvider as LegacyAuthProvider } from './context/AuthContext';
 
 // ============================================================================

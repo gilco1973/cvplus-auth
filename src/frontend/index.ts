@@ -32,6 +32,6 @@ export type {
 export type {
   AuthenticatedUser,
   UserProfile,
-  PremiumFeatures,
   Permission
 } from '../types';
+// Note: PremiumFeatures moved to @cvplus/premium module

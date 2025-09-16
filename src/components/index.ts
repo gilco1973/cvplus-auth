@@ -8,7 +8,8 @@
  */
 
 export { AuthGuard } from './AuthGuard';
-export { PermissionGate, AdminOnly, ModeratorOnly, PremiumOnly, FeatureGate } from './PermissionGate';
+export { PermissionGate, AdminOnly, ModeratorOnly, FeatureGate } from './PermissionGate';
+// PremiumOnly component removed - moved to @cvplus/premium module
 export { SignInDialog } from './SignInDialog';
 
 // TODO: Add more components as needed

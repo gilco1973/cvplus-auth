@@ -36,8 +36,8 @@ import type {
 
 import { TokenService } from './token.service';
 import { SessionService } from './session.service';
-import { PremiumService } from './premium.service';
-import { CalendarService } from './calendar.service';
+// Premium and Calendar services are provided by higher layer modules
+// Auth module only depends on @cvplus/core (Layer 1 dependency rules)
 import { createAuthError } from '../utils/errors';
 import { validateEmail, validatePassword } from '../utils/validation';
 import { requireAuthentication, updateLastLogin } from '../utils/auth-helpers';
@@ -53,8 +53,8 @@ export class AuthService {
   private unsubscribeAuth: Unsubscribe | null = null;
   private tokenService: TokenService | null = null;
   private sessionService: SessionService | null = null;
-  private premiumService: PremiumService | null = null;
-  private calendarService: CalendarService | null = null;
+  // Premium and calendar services removed to comply with Layer 1 dependency rules
+  // These services will be injected by higher layer modules when needed
 
   // Private constructor for singleton pattern
   private constructor() {
@@ -81,11 +81,9 @@ export class AuthService {
       this.auth = auth;
       this.config = config;
 
-      // Initialize dependent services
+      // Initialize dependent services (only Layer 1 services)
       this.tokenService = new TokenService(config);
       this.sessionService = new SessionService(config.session || {});
-      this.premiumService = new PremiumService(config);
-      this.calendarService = new CalendarService(config);
 
       // Set up auth state listener
       this.setupAuthStateListener();
@@ -131,41 +129,6 @@ export class AuthService {
         tokens: { accessToken: null, refreshToken: null },
         error: null,
         lastSyncAt: 0
-      },
-      premium: {
-        isPremium: false,
-        isLifetime: false,
-        tier: 'free',
-        status: 'active',
-        features: {
-          webPortal: { enabled: false },
-          aiChat: { enabled: false },
-          podcastGeneration: { enabled: false },
-          videoIntroduction: { enabled: false },
-          advancedAnalytics: { enabled: false },
-          customBranding: { enabled: false },
-          apiAccess: { enabled: false },
-          prioritySupport: { enabled: false },
-          teamCollaboration: { enabled: false },
-          cvGeneration: { enabled: true },
-          templatesAccess: { enabled: true },
-          cvLimit: { current: 0, maximum: 3, resetPeriod: 'never' },
-          storageLimit: { current: 0, maximum: 50 * 1024 * 1024, resetPeriod: 'never' },
-          exportLimit: { current: 0, maximum: 5, resetPeriod: 'monthly' },
-          apiCallLimit: { current: 0, maximum: 100, resetPeriod: 'monthly' }
-        },
-        usage: {
-          periodStart: Date.now(),
-          periodEnd: Date.now() + (30 * 24 * 60 * 60 * 1000),
-          metrics: {
-            cvGenerated: 0,
-            storageUsed: 0,
-            apiCalls: 0,
-            portalViews: 0,
-            podcastsGenerated: 0,
-            videosGenerated: 0
-          }
-        }
       },
       permissions: {
         'cv:create': true,
@@ -244,11 +207,12 @@ export class AuthService {
         // Load user profile
         const profile = await this.loadUserProfile(authenticatedUser.uid);
 
-        // Load premium status
-        if (this.premiumService) {
-          const premium = await this.premiumService.loadPremiumStatus(authenticatedUser.uid);
-          this.state.premium = premium;
-        }
+        // Load premium status - delegated to higher layer modules
+        // Premium service is now provided by @cvplus/premium module
+        // if (this.premiumService) {
+        //   const premium = await this.premiumService.loadPremiumStatus(authenticatedUser.uid);
+        //   this.state.premium = premium;
+        // }
 
         // Update permissions based on premium status
         this.updatePermissions();
@@ -296,12 +260,10 @@ export class AuthService {
   }
 
   private async createAuthenticatedUser(firebaseUser: FirebaseUser): Promise<AuthenticatedUser> {
-    // Check calendar permissions
-    const hasCalendarPermissions = this.calendarService ? 
-      await this.calendarService.hasCalendarPermissions(firebaseUser.uid) : false;
-
-    const calendarTokens = hasCalendarPermissions && this.calendarService ?
-      (await this.calendarService.getStoredTokens(firebaseUser.uid)) || undefined : undefined;
+    // Check calendar permissions - delegated to higher layer modules
+    // Calendar service is now provided by @cvplus/calendar or @cvplus/core module
+    const hasCalendarPermissions = false; // Default value, will be provided by external services
+    const calendarTokens = undefined; // Calendar tokens managed by higher layer modules
 
     return {
       uid: firebaseUser.uid,
@@ -496,7 +458,7 @@ export class AuthService {
       user: null,
       firebaseUser: null,
       profile: null,
-      premium: this.initializeState().premium,
+      // Premium removed - handled by @cvplus/premium module
       permissions: this.initializeState().permissions,
       error: null
     });
@@ -544,10 +506,11 @@ export class AuthService {
       if (result && result.user) {
         const credential = GoogleAuthProvider.credentialFromResult(result);
         
-        // Store calendar tokens if available
-        if (credential?.accessToken && this.calendarService) {
-          await this.calendarService.storeGoogleTokens(result.user.uid, credential.accessToken);
-        }
+        // Store calendar tokens if available - delegated to higher layer modules
+        // Calendar token storage is now handled by @cvplus/calendar or external services
+        // if (credential?.accessToken && this.calendarService) {
+        //   await this.calendarService.storeGoogleTokens(result.user.uid, credential.accessToken);
+        // }
 
         logger.info('Google OAuth redirect handled successfully', {
           uid: result.user.uid,
@@ -727,21 +690,9 @@ export class AuthService {
   // ============================================================================
 
   private updatePermissions(): void {
-    // Update permissions based on premium status and user roles
+    // Update permissions based on user roles
+    // Premium-based permissions are handled by @cvplus/premium module
     const permissions = { ...this.initializeState().permissions };
-
-    if (this.state.premium.isPremium) {
-      permissions['cv:share'] = true;
-      permissions['features:premium'] = true;
-      permissions['features:web_portal'] = this.state.premium.features.webPortal.enabled;
-      permissions['features:ai_chat'] = this.state.premium.features.aiChat.enabled;
-      permissions['features:podcast'] = this.state.premium.features.podcastGeneration.enabled;
-      permissions['features:video'] = this.state.premium.features.videoIntroduction.enabled;
-      permissions['features:analytics'] = this.state.premium.features.advancedAnalytics.enabled;
-      permissions['media:generate'] = true;
-      permissions['analytics:view'] = true;
-      permissions['analytics:export'] = true;
-    }
 
     // Check for admin roles (would be loaded from user profile/roles)
     // if (this.state.profile?.roles?.includes('admin')) {
@@ -758,34 +709,21 @@ export class AuthService {
   }
 
   // ============================================================================
-  // CALENDAR INTEGRATION
+  // CALENDAR INTEGRATION - DEPRECATED (moved to higher layer modules)
   // ============================================================================
 
   public async requestCalendarPermissions(): Promise<void> {
-    if (!this.state.user) {
-      throw createAuthError('auth/user-not-found', 'User must be authenticated first');
-    }
-
-    if (!this.calendarService) {
-      throw createAuthError('auth/invalid-configuration', 'Calendar service not initialized');
-    }
-
-    try {
-      await this.calendarService.requestCalendarPermissions();
-      
-      // Update user state
-      if (this.state.user) {
-        this.state.user.hasCalendarPermissions = true;
-        this.state.user.calendarTokens = (await this.calendarService.getStoredTokens(this.state.user.uid)) || undefined;
-        this.updateState({ user: this.state.user });
-      }
-    } catch (error) {
-      throw this.handleFirebaseError(error);
-    }
+    // Calendar integration moved to @cvplus/calendar or external services
+    // Auth module should not handle calendar-specific functionality
+    throw createAuthError(
+      'auth/operation-not-allowed',
+      'Calendar permissions are now managed by higher layer modules'
+    );
   }
 
   public hasCalendarPermissions(): boolean {
-    return this.state.user?.hasCalendarPermissions || false;
+    // Calendar permissions checking delegated to higher layer modules
+    return false; // Default value, actual check should be done externally
   }
 
   // ============================================================================
@@ -823,35 +761,21 @@ export class AuthService {
   // ============================================================================
 
   public async refreshPremiumStatus(): Promise<void> {
-    if (!this.premiumService || !this.state.user) {
-      throw createAuthError('auth/user-not-found', 'No authenticated user');
-    }
-
-    try {
-      const premium = await this.premiumService.refreshPremiumStatus(this.state.user.uid);
-      this.updateState({ premium });
-      this.updatePermissions();
-      this.emitEvent('onPremiumStatusChanged', premium);
-    } catch (error) {
-      throw this.handleFirebaseError(error);
-    }
+    // Premium status refresh delegated to @cvplus/premium module
+    // Auth module should not handle premium-specific functionality
+    throw createAuthError(
+      'auth/operation-not-allowed',
+      'Premium status management is now handled by higher layer modules'
+    );
   }
 
   public checkFeatureAccess(feature: string): boolean {
-    const featureKey = feature as keyof typeof this.state.premium.features;
-    const featureValue = this.state.premium.features[featureKey];
-    
-    // Handle FeatureAccess type (has enabled property)
-    if (featureValue && typeof featureValue === 'object' && 'enabled' in featureValue) {
-      return featureValue.enabled || false;
-    }
-    
-    // Handle FeatureLimit type (doesn't have enabled, but we can check if usage is available)
-    if (featureValue && typeof featureValue === 'object' && 'current' in featureValue && 'maximum' in featureValue) {
-      return featureValue.current < featureValue.maximum;
-    }
-    
-    return false;
+    // Feature access checking delegated to @cvplus/premium module
+    // Auth module should not handle premium feature logic (Layer 1 dependency rules)
+    throw createAuthError(
+      'auth/operation-not-allowed',
+      'Feature access checking is now handled by higher layer modules'
+    );
   }
 
   // ============================================================================
@@ -1028,8 +952,12 @@ export class AuthService {
     return this.state.profile;
   }
 
-  public getPremiumStatus(): typeof this.state.premium {
-    return this.state.premium;
+  public getPremiumStatus(): never {
+    // Premium status management delegated to @cvplus/premium module
+    throw createAuthError(
+      'auth/operation-not-allowed',
+      'Premium status is now handled by higher layer modules'
+    );
   }
 
   // ============================================================================
