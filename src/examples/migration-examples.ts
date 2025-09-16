@@ -6,7 +6,7 @@
  * 
  * Author: Gil Klainert
  * Date: August 28, 2025
- */
+  */
 
 import { onCall } from 'firebase-functions/v2/https';
 import { Request, Response } from 'express';
@@ -27,7 +27,8 @@ import {
 // ============================================================================
 
 // ❌ OLD PATTERN 1: Basic auth validation (found in 50+ functions)
-/*
+/* 
+  */
 export const oldFunction = onCall(async (request) => {
   // DEPRECATED: This pattern was repeated 237 times across functions
   if (!request.auth) {
@@ -37,10 +38,11 @@ export const oldFunction = onCall(async (request) => {
   const { uid } = request.auth;
   // ... function logic
 });
-*/
+/*  */
 
 // ❌ OLD PATTERN 2: Role-based auth (scattered across multiple files)
-/*
+/* 
+  */
 export const oldAdminFunction = onCall(async (request) => {
   // DEPRECATED: Role checking scattered across functions
   if (!request.auth) {
@@ -55,10 +57,11 @@ export const oldAdminFunction = onCall(async (request) => {
   
   // ... function logic
 });
-*/
+/*  */
 
 // ❌ OLD PATTERN 3: Job ownership validation (repeated in multiple functions)
-/*
+/* 
+  */
 export const oldJobFunction = onCall(async (request) => {
   // DEPRECATED: Ownership checking duplicated across functions
   if (!request.auth) {
@@ -77,7 +80,7 @@ export const oldJobFunction = onCall(async (request) => {
   
   // ... function logic
 });
-*/
+/*  */
 
 // ============================================================================
 // AFTER: Consolidated Auth Patterns (RECOMMENDED)
@@ -141,7 +144,8 @@ export const newJobFunction = onCall(async (request) => {
 // ============================================================================
 
 // ❌ OLD EXPRESS PATTERN: Manual token validation
-/*
+/* 
+  */
 app.use('/api/protected', async (req: Request, res: Response, next) => {
   // DEPRECATED: Manual token extraction and validation
   const token = req.headers.authorization?.replace('Bearer ', '');
@@ -157,7 +161,7 @@ app.use('/api/protected', async (req: Request, res: Response, next) => {
     return res.status(401).json({ error: 'Invalid token' });
   }
 });
-*/
+/*  */
 
 // ✅ NEW EXPRESS PATTERN: Consolidated middleware
 import express from 'express';
@@ -249,7 +253,7 @@ app.use('/api/admin-premium', adminPremiumAccess);
  * - validatePremium(): Replaces 28 premium access checks
  * - requireAuth middleware: Replaces 15 Express auth patterns
  * - Resource ownership: Replaces 12 job ownership validations
- */
+  */
 
 export default {
   // Migration helpers

@@ -6,7 +6,7 @@
  * 
  * @author Gil Klainert
  * @version 1.0.0 - CVPlus Auth Module
- */
+  */
 
 import { useAuthContext } from '../context/AuthContext';
 import { AuthenticatedUser, UserProfile } from '../types';
@@ -60,7 +60,7 @@ export interface UseAuthReturn {
  *   );
  * }
  * ```
- */
+  */
 export const useAuth = (): UseAuthReturn => {
   const { state, actions } = useAuthContext();
   

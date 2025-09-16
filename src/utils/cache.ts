@@ -2,7 +2,7 @@
  * Cache Utilities
  * 
  * In-memory caching utilities for authentication data.
- */
+  */
 
 import { logger } from './logger';
 
@@ -31,7 +31,7 @@ interface CacheStats {
 
 /**
  * Enhanced in-memory cache with TTL and size limits
- */
+  */
 export class EnhancedCache<T> {
   private cache: Map<string, CacheItem<T>> = new Map();
   private options: Required<CacheOptions>;
@@ -51,7 +51,7 @@ export class EnhancedCache<T> {
 
   /**
    * Set an item in the cache
-   */
+    */
   set(key: string, value: T, ttl?: number): void {
     try {
       const now = Date.now();
@@ -84,7 +84,7 @@ export class EnhancedCache<T> {
 
   /**
    * Get an item from the cache
-   */
+    */
   get(key: string): T | null {
     try {
       const item = this.cache.get(key);
@@ -119,7 +119,7 @@ export class EnhancedCache<T> {
 
   /**
    * Check if an item exists in the cache (without updating access stats)
-   */
+    */
   has(key: string): boolean {
     const item = this.cache.get(key);
     
@@ -138,7 +138,7 @@ export class EnhancedCache<T> {
 
   /**
    * Delete an item from the cache
-   */
+    */
   delete(key: string): boolean {
     const result = this.cache.delete(key);
     if (result) {
@@ -149,7 +149,7 @@ export class EnhancedCache<T> {
 
   /**
    * Clear all items from the cache
-   */
+    */
   clear(): void {
     const previousSize = this.cache.size;
     this.cache.clear();
@@ -160,7 +160,7 @@ export class EnhancedCache<T> {
 
   /**
    * Get cache statistics
-   */
+    */
   getStats(): CacheStats {
     const items = Array.from(this.cache.values());
     const timestamps = items.map(item => item.timestamp);
@@ -179,21 +179,21 @@ export class EnhancedCache<T> {
 
   /**
    * Get all cache keys
-   */
+    */
   keys(): string[] {
     return Array.from(this.cache.keys());
   }
 
   /**
    * Get cache size
-   */
+    */
   size(): number {
     return this.cache.size;
   }
 
   /**
    * Manually trigger cleanup of expired items
-   */
+    */
   cleanup(): number {
     let removedCount = 0;
     const now = Date.now();
@@ -217,7 +217,7 @@ export class EnhancedCache<T> {
 
   /**
    * Update TTL for an existing item
-   */
+    */
   updateTtl(key: string, newTtl: number): boolean {
     const item = this.cache.get(key);
     
@@ -237,7 +237,7 @@ export class EnhancedCache<T> {
 
   /**
    * Get item metadata without updating access stats
-   */
+    */
   getMetadata(key: string): Pick<CacheItem<T>, 'timestamp' | 'ttl' | 'accessCount' | 'lastAccessed'> | null {
     const item = this.cache.get(key);
     
@@ -255,7 +255,7 @@ export class EnhancedCache<T> {
 
   /**
    * Private method to start periodic cleanup
-   */
+    */
   private startCleanup(): void {
     this.cleanupTimer = setInterval(() => {
       this.cleanup();
@@ -264,7 +264,7 @@ export class EnhancedCache<T> {
 
   /**
    * Private method to evict oldest items when cache is full
-   */
+    */
   private evictOldestItems(count: number): void {
     const items = Array.from(this.cache.entries())
       .map(([key, item]) => ({ key, timestamp: item.timestamp, accessCount: item.accessCount }))
@@ -290,7 +290,7 @@ export class EnhancedCache<T> {
 
   /**
    * Destroy the cache and stop cleanup timer
-   */
+    */
   destroy(): void {
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
@@ -304,7 +304,7 @@ export class EnhancedCache<T> {
 
 /**
  * Cache specifically for authentication tokens
- */
+  */
 export class TokenCache extends EnhancedCache<string> {
   constructor() {
     super({
@@ -316,7 +316,7 @@ export class TokenCache extends EnhancedCache<string> {
 
   /**
    * Set a token with custom expiry time
-   */
+    */
   setToken(userId: string, token: string, expiresAt: number): void {
     const ttl = Math.max(0, expiresAt - Date.now() - (5 * 60 * 1000)); // 5 minute buffer
     this.set(userId, token, ttl);
@@ -324,21 +324,21 @@ export class TokenCache extends EnhancedCache<string> {
 
   /**
    * Get a token if it's still valid
-   */
+    */
   getToken(userId: string): string | null {
     return this.get(userId);
   }
 
   /**
    * Check if a token exists and is valid
-   */
+    */
   hasValidToken(userId: string): boolean {
     return this.has(userId);
   }
 
   /**
    * Remove a specific user's token
-   */
+    */
   removeToken(userId: string): boolean {
     return this.delete(userId);
   }
@@ -346,7 +346,7 @@ export class TokenCache extends EnhancedCache<string> {
 
 /**
  * Cache for session data
- */
+  */
 export class SessionCache extends EnhancedCache<any> {
   constructor() {
     super({
@@ -359,7 +359,7 @@ export class SessionCache extends EnhancedCache<any> {
 
 /**
  * Cache for permission data
- */
+  */
 export class PermissionCache extends EnhancedCache<any> {
   constructor() {
     super({
@@ -377,7 +377,7 @@ export const permissionCache = new PermissionCache();
 
 /**
  * Get overall cache statistics
- */
+  */
 export function getAllCacheStats(): {
   tokens: CacheStats;
   sessions: CacheStats;
@@ -392,7 +392,7 @@ export function getAllCacheStats(): {
 
 /**
  * Clear all caches
- */
+  */
 export function clearAllCaches(): void {
   tokenCache.clear();
   sessionCache.clear();
@@ -403,7 +403,7 @@ export function clearAllCaches(): void {
 
 /**
  * Cleanup all caches
- */
+  */
 export function cleanupAllCaches(): { tokens: number; sessions: number; permissions: number } {
   return {
     tokens: tokenCache.cleanup(),

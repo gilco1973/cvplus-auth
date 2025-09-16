@@ -1,6 +1,6 @@
 /**
  * Authentication Guard Middleware for CV Processing Functions
- */
+  */
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
@@ -11,7 +11,7 @@ export interface AuthenticatedRequest extends functions.https.Request {
 
 /**
  * Middleware to require authentication for Firebase Functions
- */
+  */
 export const requireAuth = async (req: AuthenticatedRequest, res: functions.https.Response, next: () => void) => {
   try {
     const authHeader = req.headers.authorization;
@@ -36,7 +36,7 @@ export const requireAuth = async (req: AuthenticatedRequest, res: functions.http
 
 /**
  * Extract user ID from authenticated request
- */
+  */
 export const getUserId = (req: AuthenticatedRequest): string => {
   if (!req.uid) {
     throw new Error('User not authenticated');
@@ -46,7 +46,7 @@ export const getUserId = (req: AuthenticatedRequest): string => {
 
 /**
  * Check if user has admin privileges
- */
+  */
 export const requireAdmin = async (req: AuthenticatedRequest, res: functions.https.Response, next: () => void) => {
   try {
     await requireAuth(req, res, () => {});
@@ -72,7 +72,7 @@ export const requireAdmin = async (req: AuthenticatedRequest, res: functions.htt
 /**
  * Authenticate user from request
  * Returns authentication result with user ID
- */
+  */
 export async function authenticateUser(req: functions.https.Request): Promise<{
   success: boolean;
   userId?: string;

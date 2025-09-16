@@ -2,7 +2,7 @@
  * User Types
  * 
  * Type definitions for user data and profile information.
- */
+  */
 
 import type { User as FirebaseUser } from 'firebase/auth';
 

@@ -5,7 +5,7 @@
  * These functions handle server-side authentication, session management, and security.
  *
  * @author Gil Klainert
- */
+  */
 
 // ============================================================================
 // SESSION MANAGEMENT FUNCTIONS

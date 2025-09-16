@@ -2,7 +2,7 @@
  * Session Service
  * 
  * Manages user sessions, activity tracking, and cross-tab synchronization.
- */
+  */
 
 import type { 
   AuthSession, 
@@ -79,7 +79,7 @@ export class SessionService {
 
   /**
    * Initialize a new session for an authenticated user
-   */
+    */
   async initializeSession(user: AuthenticatedUser): Promise<void> {
     try {
       const deviceInfo = this.getDeviceInfo();
@@ -135,7 +135,7 @@ export class SessionService {
 
   /**
    * Refresh the current session
-   */
+    */
   async refreshSession(): Promise<AuthSession | null> {
     if (!this.state.currentSession) {
       return null;
@@ -179,7 +179,7 @@ export class SessionService {
 
   /**
    * End the current session
-   */
+    */
   async endSession(reason: SessionEndReason = 'manual'): Promise<void> {
     const session = this.state.currentSession;
     
@@ -222,7 +222,7 @@ export class SessionService {
 
   /**
    * Check if session is valid
-   */
+    */
   isSessionValid(): boolean {
     const session = this.state.currentSession;
     
@@ -250,7 +250,7 @@ export class SessionService {
 
   /**
    * Update session activity
-   */
+    */
   updateActivity(): void {
     const now = Date.now();
     this.state.lastActivity = now;
@@ -268,21 +268,21 @@ export class SessionService {
 
   /**
    * Get current session
-   */
+    */
   getCurrentSession(): AuthSession | null {
     return this.state.currentSession;
   }
 
   /**
    * Get session state
-   */
+    */
   getSessionState(): SessionState {
     return { ...this.state };
   }
 
   /**
    * Subscribe to session events
-   */
+    */
   on(event: string, handler: Function): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
@@ -292,7 +292,7 @@ export class SessionService {
 
   /**
    * Unsubscribe from session events
-   */
+    */
   off(event: string, handler: Function): void {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
@@ -523,7 +523,7 @@ export class SessionService {
 
   /**
    * Clear the current session
-   */
+    */
   clearSession(): void {
     this.state = {
       isAuthenticated: false,
@@ -542,7 +542,7 @@ export class SessionService {
 
   /**
    * Validate the current session
-   */
+    */
   async validateSession(): Promise<boolean> {
     if (!this.state.currentSession) {
       return false;
@@ -568,7 +568,7 @@ export class SessionService {
 
   /**
    * Clean up resources when the service is destroyed
-   */
+    */
   destroy(): void {
     if (this.state.syncTimer) {
       clearInterval(this.state.syncTimer);
@@ -580,5 +580,5 @@ export class SessionService {
 
 /**
  * Session end reasons
- */
+  */
 type SessionEndReason = 'logout' | 'timeout' | 'expired' | 'manual' | 'security';

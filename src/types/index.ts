@@ -6,7 +6,7 @@
  * 
  * @author Gil Klainert
  * @version 1.0.0
- */
+  */
 
 // Export all types, resolving conflicts by prioritizing error.types for error definitions
 export * from './user.types';

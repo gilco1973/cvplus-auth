@@ -3,7 +3,7 @@
  * 
  * Service for autonomous authentication and user management.
  * Minimal implementation for TypeScript compilation.
- */
+  */
 
 export class AutonomousAuthService {
   private static instance: AutonomousAuthService;

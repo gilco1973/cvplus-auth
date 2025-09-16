@@ -2,7 +2,7 @@
  * Authentication Types
  * 
  * Core authentication type definitions and interfaces.
- */
+  */
 
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { AuthenticatedUser, UserProfile } from './user.types';

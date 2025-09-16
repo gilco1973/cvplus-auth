@@ -2,7 +2,7 @@
  * Token Service
  * 
  * Manages authentication tokens, caching, and validation.
- */
+  */
 
 import { getIdToken, type User as FirebaseUser } from 'firebase/auth';
 import type { AuthConfig, SessionToken, AuthValidationResult, AuthTokenInfo } from '../types';
@@ -32,7 +32,7 @@ export class TokenService {
 
   /**
    * Gets a fresh authentication token from Firebase Auth
-   */
+    */
   async getAuthToken(user: FirebaseUser, forceRefresh = false): Promise<string | null> {
     try {
       if (!user) {
@@ -79,7 +79,7 @@ export class TokenService {
 
   /**
    * Validates a token and returns user information
-   */
+    */
   async validateToken(token: string): Promise<AuthValidationResult> {
     try {
       if (!validateJWT(token)) {
@@ -131,7 +131,7 @@ export class TokenService {
 
   /**
    * Clears the token cache
-   */
+    */
   clearTokenCache(): void {
     this.tokenCache.clear();
     logger.debug('Token cache cleared');
@@ -139,7 +139,7 @@ export class TokenService {
 
   /**
    * Creates a new session token
-   */
+    */
   createSessionToken(_userId: string, scopes: string[]): SessionToken {
     const now = Date.now();
     const expiresAt = now + TOKEN_DEFAULTS.MAX_AGE;
@@ -155,7 +155,7 @@ export class TokenService {
 
   /**
    * Parses a JWT token
-   */
+    */
   private parseJWT(token: string): AuthTokenInfo | null {
     try {
       const parts = token.split('.');
@@ -177,14 +177,14 @@ export class TokenService {
 
   /**
    * Generates a unique token ID
-   */
+    */
   private generateTokenId(): string {
     return `cvplus_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
    * Checks if a token is expired
-   */
+    */
   isTokenExpired(token: string): boolean {
     const tokenInfo = this.parseJWT(token);
     if (!tokenInfo) return true;
@@ -194,7 +194,7 @@ export class TokenService {
 
   /**
    * Gets time until token expiration
-   */
+    */
   getTimeToExpiration(token: string): number {
     const tokenInfo = this.parseJWT(token);
     if (!tokenInfo) return 0;
@@ -204,7 +204,7 @@ export class TokenService {
 
   /**
    * Clears all cached tokens
-   */
+    */
   clearCache(): void {
     this.tokenCache.clear();
     // Also clear from localStorage if available
@@ -225,7 +225,7 @@ export class TokenService {
 
   /**
    * Persists token to localStorage for cross-tab access
-   */
+    */
   private persistTokenToStorage(userId: string, cache: TokenCache): void {
     if (typeof window === 'undefined' || !window.localStorage) return;
     
@@ -244,7 +244,7 @@ export class TokenService {
 
   /**
    * Loads token metadata from localStorage
-   */
+    */
   private _loadTokenFromStorage(userId: string): TokenCache | null {
     if (typeof window === 'undefined' || !window.localStorage) return null;
     
@@ -271,7 +271,7 @@ export class TokenService {
 
   /**
    * Refreshes token with exponential backoff retry
-   */
+    */
   async refreshTokenWithRetry(user: FirebaseUser, maxRetries = 3): Promise<string | null> {
     let lastError: Error | null = null;
     
@@ -307,7 +307,7 @@ export class TokenService {
 
   /**
    * Checks if token needs refresh (within threshold)
-   */
+    */
   needsRefresh(token: string, thresholdMinutes = 5): boolean {
     const timeToExpiration = this.getTimeToExpiration(token);
     const thresholdMs = thresholdMinutes * 60 * 1000;

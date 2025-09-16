@@ -2,7 +2,7 @@
  * Error Types
  * 
  * Authentication-specific error types and error handling utilities.
- */
+  */
 
 // BaseError is defined locally to avoid external dependencies
 

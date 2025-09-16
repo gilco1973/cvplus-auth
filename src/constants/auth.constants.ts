@@ -2,7 +2,7 @@
  * Authentication Constants
  * 
  * Core constants and default configuration for the authentication module.
- */
+  */
 
 import type { AuthModuleConfig, AuthProvider } from '../types';
 

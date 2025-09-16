@@ -3,7 +3,7 @@
  * 
  * Authentication error creation and handling utilities.
  * Integrates with Core error handling when available for consistency.
- */
+  */
 
 import type { AuthError, AuthErrorCode, AuthErrorContext } from '../types';
 import { DEFAULT_ERROR_MESSAGES } from '../types/error.types';
@@ -25,7 +25,7 @@ try {
 /**
  * Creates a standardized authentication error
  * Integrates with Core error handling when available for consistency
- */
+  */
 export function createAuthError(
   code: AuthErrorCode,
   message: string,
@@ -68,7 +68,7 @@ export function createAuthError(
 
 /**
  * Creates an authentication error from a Firebase error
- */
+  */
 export function createFromFirebaseError(firebaseError: any): AuthError {
   const code = firebaseError?.code || 'auth/unknown-error';
   const message = firebaseError?.message || 'Unknown authentication error';
@@ -87,7 +87,7 @@ export function createFromFirebaseError(firebaseError: any): AuthError {
 
 /**
  * Creates a network-related authentication error
- */
+  */
 export function createNetworkError(originalError: Error): AuthError {
   return createAuthError(
     'network/offline',
@@ -103,7 +103,7 @@ export function createNetworkError(originalError: Error): AuthError {
 
 /**
  * Creates a validation error for authentication data
- */
+  */
 export function createValidationError(field: string, value: any): AuthError {
   return createAuthError(
     'auth/invalid-credential',
@@ -120,7 +120,7 @@ export function createValidationError(field: string, value: any): AuthError {
 
 /**
  * Creates a permission-related error
- */
+  */
 export function createPermissionError(required: string, actual?: string): AuthError {
   return createAuthError(
     'permission/denied',
@@ -137,7 +137,7 @@ export function createPermissionError(required: string, actual?: string): AuthEr
 
 /**
  * Creates a premium feature access error
- */
+  */
 export function createPremiumError(feature: string, tier?: string): AuthError {
   return createAuthError(
     'premium/required',
@@ -154,7 +154,7 @@ export function createPremiumError(feature: string, tier?: string): AuthError {
 
 /**
  * Determines if an error is retryable
- */
+  */
 function isRetryableError(code: AuthErrorCode): boolean {
   const retryableCodes: AuthErrorCode[] = [
     'network/timeout',
@@ -172,7 +172,7 @@ function isRetryableError(code: AuthErrorCode): boolean {
 
 /**
  * Gets the retry delay for retryable errors (in milliseconds)
- */
+  */
 function getRetryDelay(code: AuthErrorCode): number {
   const delays: Record<string, number> = {
     'network/timeout': 1000,
@@ -190,7 +190,7 @@ function getRetryDelay(code: AuthErrorCode): number {
 
 /**
  * Gets a user-friendly error message
- */
+  */
 function getUserFriendlyMessage(code: AuthErrorCode, fallback: string): string {
   const errorMessage = DEFAULT_ERROR_MESSAGES[code];
   return errorMessage?.message || fallback;
@@ -198,14 +198,14 @@ function getUserFriendlyMessage(code: AuthErrorCode, fallback: string): string {
 
 /**
  * Checks if an error is an authentication error
- */
+  */
 export function isAuthError(error: any): error is AuthError {
   return error && typeof error === 'object' && 'code' in error && 'timestamp' in error;
 }
 
 /**
  * Extracts relevant error information for logging
- */
+  */
 export function getErrorInfo(error: AuthError): Record<string, any> {
   return {
     code: error.code,
@@ -221,7 +221,7 @@ export function getErrorInfo(error: AuthError): Record<string, any> {
 
 /**
  * Sanitizes error data for safe transmission (removes sensitive information)
- */
+  */
 export function sanitizeErrorForTransmission(error: AuthError): Partial<AuthError> {
   return {
     code: error.code,

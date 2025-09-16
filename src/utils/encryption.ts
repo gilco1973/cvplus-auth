@@ -2,11 +2,11 @@
  * Encryption Utilities
  * 
  * Utilities for encrypting and decrypting sensitive authentication data.
- */
+  */
 
 /**
  * Simple base64 encoding (for development - use proper encryption in production)
- */
+  */
 export function encodeData(data: string): string {
   try {
     return btoa(data);
@@ -18,7 +18,7 @@ export function encodeData(data: string): string {
 
 /**
  * Simple base64 decoding (for development - use proper decryption in production)
- */
+  */
 export function decodeData(encodedData: string): string {
   try {
     return atob(encodedData);
@@ -30,7 +30,7 @@ export function decodeData(encodedData: string): string {
 
 /**
  * Encrypt sensitive data (placeholder implementation)
- */
+  */
 export function encryptSensitiveData(data: string, key?: string): string {
   // In a production environment, this would use proper encryption
   // like AES-256-GCM with a proper key derivation function
@@ -46,7 +46,7 @@ export function encryptSensitiveData(data: string, key?: string): string {
 
 /**
  * Decrypt sensitive data (placeholder implementation)
- */
+  */
 export function decryptSensitiveData(encryptedData: string, key?: string): string {
   // In a production environment, this would use proper decryption
   
@@ -61,7 +61,7 @@ export function decryptSensitiveData(encryptedData: string, key?: string): strin
 
 /**
  * Generate a random string for use as salt or nonce
- */
+  */
 export function generateRandomString(length: number = 32): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -75,7 +75,7 @@ export function generateRandomString(length: number = 32): string {
 
 /**
  * Simple hash function for data integrity (not cryptographically secure)
- */
+  */
 export function simpleHash(data: string): string {
   let hash = 0;
   if (data.length === 0) return hash.toString();
@@ -91,7 +91,7 @@ export function simpleHash(data: string): string {
 
 /**
  * Mask sensitive data for logging (shows only first and last few characters)
- */
+  */
 export function maskSensitiveData(data: string, visibleChars: number = 3): string {
   if (!data || data.length <= visibleChars * 2) {
     return '***';
@@ -107,7 +107,7 @@ export function maskSensitiveData(data: string, visibleChars: number = 3): strin
 
 /**
  * Validate data integrity using a simple checksum
- */
+  */
 export function validateDataIntegrity(data: string, expectedHash: string): boolean {
   const actualHash = simpleHash(data);
   return actualHash === expectedHash;
@@ -115,7 +115,7 @@ export function validateDataIntegrity(data: string, expectedHash: string): boole
 
 /**
  * Generate a secure token (placeholder - use proper cryptographic methods in production)
- */
+  */
 export function generateSecureToken(length: number = 64): string {
   const array = new Uint8Array(length / 2);
   
@@ -134,7 +134,7 @@ export function generateSecureToken(length: number = 64): string {
 
 /**
  * Secure comparison of two strings (prevents timing attacks)
- */
+  */
 export function secureCompare(a: string, b: string): boolean {
   if (a.length !== b.length) {
     return false;

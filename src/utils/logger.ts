@@ -3,7 +3,7 @@
  * 
  * Simple logging utility for the authentication module.
  * Will be enhanced with proper logging infrastructure later.
- */
+  */
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 

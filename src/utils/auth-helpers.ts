@@ -7,7 +7,7 @@
  * 
  * Author: Gil Klainert
  * Date: August 28, 2025
- */
+  */
 
 // Import Core utilities when available
 let coreRequireGoogleAuth: any = null;
@@ -35,7 +35,7 @@ import * as admin from 'firebase-admin';
  * ```
  * const token = req.headers.authorization?.replace('Bearer ', '');
  * ```
- */
+  */
 export function extractBearerToken(authHeader?: string): string | null {
   if (!authHeader) {
     return null;
@@ -52,7 +52,7 @@ export function extractBearerToken(authHeader?: string): string | null {
  * Validate Firebase ID token
  * 
  * Consolidates token validation patterns found across middleware
- */
+  */
 export async function validateIdToken(token: string): Promise<admin.auth.DecodedIdToken> {
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
@@ -80,14 +80,14 @@ export async function validateIdToken(token: string): Promise<admin.auth.Decoded
  * ```
  * const hasRole = userRoles.some(role => allowedRoles.includes(role));
  * ```
- */
+  */
 export function hasAnyRole(userRoles: string[], allowedRoles: string[]): boolean {
   return allowedRoles.some(role => userRoles.includes(role));
 }
 
 /**
  * Check if user has all of the specified roles
- */
+  */
 export function hasAllRoles(userRoles: string[], requiredRoles: string[]): boolean {
   return requiredRoles.every(role => userRoles.includes(role));
 }
@@ -96,7 +96,7 @@ export function hasAllRoles(userRoles: string[], requiredRoles: string[]): boole
  * Get user roles from token or Firestore
  * 
  * Consolidates user role fetching patterns
- */
+  */
 export async function getUserRoles(uid: string, token?: admin.auth.DecodedIdToken): Promise<string[]> {
   // Try to get roles from token custom claims first
   if (token?.roles && Array.isArray(token.roles)) {
@@ -126,7 +126,7 @@ export async function getUserRoles(uid: string, token?: admin.auth.DecodedIdToke
  * Create standardized auth error
  * 
  * Consolidates error creation patterns across middleware
- */
+  */
 export function createAuthError(code: string, message: string, details?: Record<string, any>): HttpsError {
   const errorCode = code as 'unauthenticated' | 'permission-denied' | 'internal';
   
@@ -146,7 +146,7 @@ export function createAuthError(code: string, message: string, details?: Record<
  * Check if email is verified
  * 
  * Consolidates email verification patterns
- */
+  */
 export function isEmailVerified(token: admin.auth.DecodedIdToken): boolean {
   return token.email_verified === true;
 }
@@ -155,7 +155,7 @@ export function isEmailVerified(token: admin.auth.DecodedIdToken): boolean {
  * Get user's display information
  * 
  * Safely extract display info from token
- */
+  */
 export function getUserDisplayInfo(token: admin.auth.DecodedIdToken): {
   uid: string;
   email?: string;
@@ -174,7 +174,7 @@ export function getUserDisplayInfo(token: admin.auth.DecodedIdToken): {
  * Check if user owns resource
  * 
  * Consolidates ownership checking patterns from multiple functions
- */
+  */
 export async function checkResourceOwnership(
   userId: string,
   resourceId: string,
@@ -210,7 +210,7 @@ export async function checkResourceOwnership(
  * Rate limiting helper
  * 
  * Basic rate limiting implementation for auth endpoints
- */
+  */
 export class RateLimiter {
   private requests = new Map<string, number[]>();
   private readonly windowMs: number;
@@ -223,7 +223,7 @@ export class RateLimiter {
 
   /**
    * Check if request should be rate limited
-   */
+    */
   isRateLimited(identifier: string): boolean {
     const now = Date.now();
     const userRequests = this.requests.get(identifier) || [];
@@ -247,7 +247,7 @@ export class RateLimiter {
 
   /**
    * Clear rate limiting data for identifier
-   */
+    */
   clearLimiter(identifier: string): void {
     this.requests.delete(identifier);
   }
@@ -257,7 +257,7 @@ export class RateLimiter {
  * Audit logging helper
  * 
  * Standardized audit logging for auth events
- */
+  */
 export function logAuthEvent(event: {
   type: 'login' | 'logout' | 'access_granted' | 'access_denied' | 'role_check' | 'permission_check';
   uid?: string;
@@ -279,7 +279,7 @@ export function logAuthEvent(event: {
  * Security headers helper
  * 
  * Add standard security headers to responses
- */
+  */
 export function addSecurityHeaders(res: any): void {
   res.set({
     'X-Content-Type-Options': 'nosniff',
@@ -295,7 +295,7 @@ export function addSecurityHeaders(res: any): void {
  * Clean sensitive data from logs
  * 
  * Remove sensitive information before logging
- */
+  */
 export function sanitizeForLogging(data: Record<string, any>): Record<string, any> {
   const sensitiveFields = ['password', 'token', 'secret', 'key', 'authorization'];
   const sanitized = { ...data };
@@ -316,7 +316,7 @@ export function sanitizeForLogging(data: Record<string, any>): Record<string, an
 /**
  * Wrapper for Core's requireGoogleAuth utility when available
  * Provides backward compatibility and Auth-specific error handling
- */
+  */
 export async function requireAuthentication(request: any): Promise<any> {
   if (coreRequireGoogleAuth) {
     try {
@@ -345,7 +345,7 @@ export async function requireAuthentication(request: any): Promise<any> {
 /**
  * Wrapper for Core's updateUserLastLogin utility when available
  * Provides Auth-specific logging and error handling with fallback
- */
+  */
 export async function updateLastLogin(
   uid: string, 
   email: string, 
@@ -401,7 +401,7 @@ export async function updateLastLogin(
 /**
  * Wrapper for Core's getGoogleAccessToken utility when available
  * Provides Auth-specific error handling with fallback
- */
+  */
 export async function getAccessToken(uid: string): Promise<string | null> {
   if (coreGetGoogleAccessToken) {
     try {

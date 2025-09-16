@@ -2,7 +2,7 @@
  * Storage Utilities
  * 
  * Utilities for managing local storage, session storage, and IndexedDB.
- */
+  */
 
 import { encryptSensitiveData, decryptSensitiveData } from './encryption';
 import { logger } from './logger';
@@ -22,7 +22,7 @@ interface StorageItem<T> {
 
 /**
  * Enhanced localStorage wrapper with encryption and TTL support
- */
+  */
 export class EnhancedStorage {
   protected prefix: string;
   protected defaultEncrypt: boolean;
@@ -34,7 +34,7 @@ export class EnhancedStorage {
 
   /**
    * Store data in localStorage
-   */
+    */
   setItem<T>(key: string, value: T, options: StorageOptions = {}): boolean {
     if (typeof window === 'undefined') {
       logger.warn('localStorage not available in server environment');
@@ -73,7 +73,7 @@ export class EnhancedStorage {
 
   /**
    * Retrieve data from localStorage
-   */
+    */
   getItem<T>(key: string, options: Pick<StorageOptions, 'prefix'> = {}): T | null {
     if (typeof window === 'undefined') {
       return null;
@@ -119,7 +119,7 @@ export class EnhancedStorage {
 
   /**
    * Remove data from localStorage
-   */
+    */
   removeItem(key: string, options: Pick<StorageOptions, 'prefix'> = {}): boolean {
     if (typeof window === 'undefined') {
       return false;
@@ -138,7 +138,7 @@ export class EnhancedStorage {
 
   /**
    * Clear all items with the current prefix
-   */
+    */
   clear(options: Pick<StorageOptions, 'prefix'> = {}): boolean {
     if (typeof window === 'undefined') {
       return false;
@@ -171,7 +171,7 @@ export class EnhancedStorage {
 
   /**
    * Get all keys with the current prefix
-   */
+    */
   getKeys(options: Pick<StorageOptions, 'prefix'> = {}): string[] {
     if (typeof window === 'undefined') {
       return [];
@@ -197,7 +197,7 @@ export class EnhancedStorage {
 
   /**
    * Clean up expired items
-   */
+    */
   cleanup(options: Pick<StorageOptions, 'prefix'> = {}): number {
     if (typeof window === 'undefined') {
       return 0;
@@ -261,7 +261,7 @@ export class EnhancedStorage {
 
 /**
  * SessionStorage wrapper (same interface as EnhancedStorage)
- */
+  */
 export class EnhancedSessionStorage extends EnhancedStorage {
   setItem<T>(key: string, value: T, options: StorageOptions = {}): boolean {
     if (typeof window === 'undefined') {
@@ -355,7 +355,7 @@ export const sessionStore = new EnhancedSessionStorage('cvplus_session_', false)
 
 /**
  * Check if storage is available
- */
+  */
 export function isStorageAvailable(type: 'localStorage' | 'sessionStorage' = 'localStorage'): boolean {
   if (typeof window === 'undefined') {
     return false;
@@ -374,7 +374,7 @@ export function isStorageAvailable(type: 'localStorage' | 'sessionStorage' = 'lo
 
 /**
  * Get storage usage information
- */
+  */
 export function getStorageInfo(): {
   localStorage: { used: number; available: boolean };
   sessionStorage: { used: number; available: boolean };

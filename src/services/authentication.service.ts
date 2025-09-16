@@ -6,7 +6,7 @@
  * 
  * Author: Gil Klainert
  * Date: August 28, 2025
- */
+  */
 
 import { HttpsError, CallableRequest } from 'firebase-functions/v2/https';
 import { Request } from 'express';
@@ -58,7 +58,7 @@ export interface JobOwnershipValidationOptions {
  * 
  * Provides consolidated authentication validation patterns to eliminate
  * the 237 scattered auth check occurrences across Firebase Functions.
- */
+  */
 export class FirebaseAuthenticationService {
   private auth: admin.auth.Auth;
 
@@ -75,7 +75,7 @@ export class FirebaseAuthenticationService {
    *   throw new HttpsError('unauthenticated', 'User must be authenticated');
    * }
    * ```
-   */
+    */
   async requireAuth(request: CallableRequest, options?: AuthValidationOptions): Promise<AuthValidationResult> {
     // Basic auth context validation
     if (!request.auth) {
@@ -144,7 +144,7 @@ export class FirebaseAuthenticationService {
    * Express middleware authentication validator
    * 
    * For Express middleware patterns, validates Bearer token authentication
-   */
+    */
   async requireAuthExpress(req: Request): Promise<AuthenticatedExpressRequest> {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -195,7 +195,7 @@ export class FirebaseAuthenticationService {
    *   throw new HttpsError('permission-denied', 'Access denied');
    * }
    * ```
-   */
+    */
   async requireAuthWithJobOwnership(
     request: CallableRequest,
     jobId: string,
@@ -265,7 +265,7 @@ export class FirebaseAuthenticationService {
 
   /**
    * Validate additional auth options
-   */
+    */
   private async validateAuthOptions(result: AuthValidationResult, options: AuthValidationOptions): Promise<void> {
     // Email verification requirement
     if (options.requireEmailVerification && !result.isEmailVerified) {
@@ -309,7 +309,7 @@ export class FirebaseAuthenticationService {
 
   /**
    * Batch user validation for administrative operations
-   */
+    */
   async validateMultipleUsers(userIds: string[]): Promise<Map<string, admin.auth.UserRecord>> {
     const results = new Map<string, admin.auth.UserRecord>();
     const errors: string[] = [];

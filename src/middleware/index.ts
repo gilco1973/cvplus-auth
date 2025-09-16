@@ -6,7 +6,7 @@
  * 
  * Author: Gil Klainert
  * Date: August 28, 2025
- */
+  */
 
 // Import middleware functions
 import {
@@ -102,7 +102,7 @@ export const authMiddleware = {
 /**
  * Authenticate user from Firebase Functions request
  * Compatibility function for CV Processing and other submodules
- */
+  */
 export async function authenticateUser(req: any): Promise<{
   success: boolean;
   userId?: string;
@@ -139,14 +139,14 @@ export async function authenticateUser(req: any): Promise<{
  * Migration helpers for replacing old middleware patterns
  *
  * These functions help migrate from old scattered patterns to consolidated middleware
- */
+  */
 export const migrationHelpers = {
   /**
    * Replace old authGuard.requireAuth pattern
    * 
    * Old: import { requireAuth } from '../middleware/authGuard';
    * New: import { validateAuth } from '@cvplus/auth/middleware';
-   */
+    */
   replaceRequireAuth: validateAuth,
   
   /**
@@ -154,12 +154,12 @@ export const migrationHelpers = {
    * 
    * Old: import { enhancedPremiumGuard } from '../middleware/enhancedPremiumGuard';
    * New: import { requirePremium } from '@cvplus/auth/middleware';
-   */
+    */
   replaceEnhancedPremiumGuard: requirePremium,
   
   /**
    * Replace scattered admin checking patterns
-   */
+    */
   replaceAdminCheck: validateAdmin,
   
   /**
@@ -168,7 +168,7 @@ export const migrationHelpers = {
    * Usage:
    * const validator = createJobOwnershipValidator('cvJobs', 'userId');
    * await validator(request, jobId);
-   */
+    */
   createJobOwnershipValidator: (collection: string, userField: string = 'userId') =>
     createResourceOwnership({
       collectionPath: collection,

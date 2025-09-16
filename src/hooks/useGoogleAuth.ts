@@ -6,7 +6,7 @@
  * 
  * @author Gil Klainert
  * @version 1.0.0 - CVPlus Auth Module
- */
+  */
 
 import { useAuth } from './useAuth';
 
@@ -39,7 +39,7 @@ export interface UseGoogleAuthReturn {
  *   );
  * }
  * ```
- */
+  */
 export const useGoogleAuth = (): UseGoogleAuthReturn => {
   const { isLoading, error } = useAuth();
   

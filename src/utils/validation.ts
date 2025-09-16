@@ -3,7 +3,7 @@
  * 
  * Validation functions for authentication data and user input.
  * Uses Core utilities where available to avoid duplication.
- */
+  */
 
 import { VALIDATION_PATTERNS } from '../constants/auth.constants';
 import type { AuthConfig } from '../types';
@@ -23,7 +23,7 @@ try {
 /**
  * Validates an email address
  * Uses Core utility if available, otherwise falls back to local implementation
- */
+  */
 export function validateEmail(email: string): boolean {
   if (coreValidateEmail) {
     return coreValidateEmail(email);
@@ -39,7 +39,7 @@ export function validateEmail(email: string): boolean {
 
 /**
  * Validates a password based on the configuration
- */
+  */
 export function validatePassword(password: string, config?: AuthConfig): boolean {
   if (!password || typeof password !== 'string') {
     return false;
@@ -93,7 +93,7 @@ export function validatePassword(password: string, config?: AuthConfig): boolean
 /**
  * Validates a phone number
  * Uses Core utility if available, otherwise falls back to local implementation
- */
+  */
 export function validatePhoneNumber(phone: string): boolean {
   if (coreValidatePhoneNumber) {
     return coreValidatePhoneNumber(phone);
@@ -109,7 +109,7 @@ export function validatePhoneNumber(phone: string): boolean {
 
 /**
  * Validates a UUID
- */
+  */
 export function validateUUID(uuid: string): boolean {
   if (!uuid || typeof uuid !== 'string') {
     return false;
@@ -120,7 +120,7 @@ export function validateUUID(uuid: string): boolean {
 
 /**
  * Validates a JWT token format
- */
+  */
 export function validateJWT(token: string): boolean {
   if (!token || typeof token !== 'string') {
     return false;

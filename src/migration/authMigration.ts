@@ -6,12 +6,12 @@
  * 
  * @author Gil Klainert
  * @version 1.0.0 - CVPlus Auth Module
- */
+  */
 
 /**
  * Legacy AuthContext type mapping for backward compatibility
  * Maps root repository interfaces to auth submodule interfaces
- */
+  */
 export interface LegacyAuthContextType {
   user: any;
   loading: boolean;
@@ -45,7 +45,7 @@ export interface LegacyAuthContextType {
 /**
  * Migration wrapper for root repository components
  * Provides backward compatibility while transitioning to auth submodule
- */
+  */
 export const createLegacyAuthWrapper = (authModule: any): LegacyAuthContextType => {
   return {
     user: authModule.user,
@@ -85,7 +85,7 @@ export const createLegacyAuthWrapper = (authModule: any): LegacyAuthContextType 
 /**
  * Import mapping for components being migrated
  * Maps old import paths to new auth submodule exports
- */
+  */
 export const importMappings = {
   // Context imports
   'contexts/AuthContext': '@cvplus/auth',
@@ -115,7 +115,7 @@ export const importMappings = {
 /**
  * Component export mappings for migrated components
  * Maps old component names to new auth submodule exports
- */
+  */
 export const componentMappings = {
   // Root repository exports -> Auth submodule exports
   'useAuth': 'useAuth',
@@ -135,7 +135,7 @@ export const componentMappings = {
 
 /**
  * Migration checklist for components
- */
+  */
 export const migrationChecklist = {
   frontend: [
     'Update import path: contexts/AuthContext -> @cvplus/auth',

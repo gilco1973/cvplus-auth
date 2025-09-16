@@ -6,7 +6,7 @@
  *
  * @author Gil Klainert
  * @version 2.0.0
- */
+  */
 
 import { Request, Response, NextFunction } from 'express';
 import * as admin from 'firebase-admin';
@@ -75,7 +75,7 @@ export interface PremiumMiddlewareConfig {
 
 /**
  * Extract and verify Firebase ID token from request
- */
+  */
 async function extractAndVerifyToken(req: AuthRequest): Promise<admin.auth.DecodedIdToken | null> {
   try {
     const authHeader = req.headers.authorization;
@@ -97,7 +97,7 @@ async function extractAndVerifyToken(req: AuthRequest): Promise<admin.auth.Decod
 
 /**
  * Fetch user data and subscription info from Firestore
- */
+  */
 async function fetchUserData(uid: string): Promise<AuthRequest['user'] | null> {
   try {
     const [userDoc, subscriptionDoc] = await Promise.all([
@@ -142,7 +142,7 @@ async function fetchUserData(uid: string): Promise<AuthRequest['user'] | null> {
 
 /**
  * Core authentication function
- */
+  */
 export const authenticateUser = async (req: AuthRequest, options: BasicAuthMiddlewareConfig = {}): Promise<AuthResult> => {
   try {
     const decodedToken = await extractAndVerifyToken(req);
@@ -196,7 +196,7 @@ export const authenticateUser = async (req: AuthRequest, options: BasicAuthMiddl
 
 /**
  * Express middleware: Require authentication
- */
+  */
 export const requireAuth = (config: BasicAuthMiddlewareConfig = {}) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     const result = await authenticateUser(req, { required: true, ...config });
@@ -215,7 +215,7 @@ export const requireAuth = (config: BasicAuthMiddlewareConfig = {}) => {
 
 /**
  * Express middleware: Require email verification
- */
+  */
 export const requireEmailVerification = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user?.emailVerified) {
     res.status(403).json({
@@ -230,7 +230,7 @@ export const requireEmailVerification = (req: AuthRequest, res: Response, next: 
 
 /**
  * Express middleware: Require admin role
- */
+  */
 export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user?.isAdmin) {
     res.status(403).json({
@@ -245,7 +245,7 @@ export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction
 
 /**
  * Express middleware: Require premium subscription
- */
+  */
 export const requirePremium = (config: PremiumMiddlewareConfig = {}) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     const user = req.user;
@@ -293,7 +293,7 @@ export const requirePremium = (config: PremiumMiddlewareConfig = {}) => {
 
 /**
  * Express middleware: Require enterprise subscription
- */
+  */
 export const requireEnterprise = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (req.user?.subscription?.tier !== 'enterprise') {
     res.status(403).json({
@@ -308,7 +308,7 @@ export const requireEnterprise = (req: AuthRequest, res: Response, next: NextFun
 
 /**
  * Express middleware: Require specific role(s)
- */
+  */
 export const requireRole = (config: RoleMiddlewareConfig) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     const userRoles = req.user?.roles || [];
@@ -345,21 +345,21 @@ export const requireRole = (config: RoleMiddlewareConfig) => {
 
 /**
  * Firebase Functions: Validate authentication
- */
+  */
 export const validateAuth = async (req: AuthRequest): Promise<AuthResult> => {
   return await authenticateUser(req, { required: true });
 };
 
 /**
  * Firebase Functions: Validate authentication with email verification
- */
+  */
 export const validateAuthWithEmail = async (req: AuthRequest): Promise<AuthResult> => {
   return await authenticateUser(req, { required: true, validateEmail: true });
 };
 
 /**
  * Firebase Functions: Validate admin access
- */
+  */
 export const validateAdmin = async (req: AuthRequest): Promise<AuthResult> => {
   const authResult = await authenticateUser(req, { required: true });
 
@@ -380,7 +380,7 @@ export const validateAdmin = async (req: AuthRequest): Promise<AuthResult> => {
 
 /**
  * Firebase Functions: Validate premium subscription
- */
+  */
 export const validatePremium = async (req: AuthRequest): Promise<AuthResult> => {
   const authResult = await authenticateUser(req, { required: true });
 
@@ -401,7 +401,7 @@ export const validatePremium = async (req: AuthRequest): Promise<AuthResult> => 
 
 /**
  * Firebase Functions: Validate premium feature access
- */
+  */
 export const validatePremiumFeature = async (feature: string, req: AuthRequest): Promise<AuthResult> => {
   const authResult = await validatePremium(req);
 
@@ -424,7 +424,7 @@ export const validatePremiumFeature = async (feature: string, req: AuthRequest):
 
 /**
  * Firebase Functions: Validate role access
- */
+  */
 export const validateRole = async (role: string, req: AuthRequest): Promise<AuthResult> => {
   const authResult = await authenticateUser(req, { required: true });
 
@@ -447,7 +447,7 @@ export const validateRole = async (role: string, req: AuthRequest): Promise<Auth
 
 /**
  * Create composite middleware that runs multiple auth checks
- */
+  */
 export const createComposite = (...middlewares: Function[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     let index = 0;
@@ -471,7 +471,7 @@ export const createComposite = (...middlewares: Function[]) => {
 
 /**
  * Authentication error handler
- */
+  */
 export const authErrorHandler = (err: any, req: Request, res: Response, next: NextFunction): void => {
   logger.error('Authentication error:', err);
 
@@ -507,7 +507,7 @@ export const authErrorHandler = (err: any, req: Request, res: Response, next: Ne
 
 /**
  * Authentication logger middleware
- */
+  */
 export const authLogger = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
   const userAgent = req.headers['user-agent'] || 'Unknown';
@@ -534,7 +534,7 @@ export const authLogger = (req: Request, res: Response, next: NextFunction) => {
 
 /**
  * Legacy API key validation (for backward compatibility)
- */
+  */
 export const validateApiKey = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   const apiKey = req.headers['x-api-key'] as string;
 
@@ -590,7 +590,7 @@ export const validateApiKey = async (req: AuthRequest, res: Response, next: Next
 
 /**
  * Get user from token (for backward compatibility)
- */
+  */
 export const getUserFromToken = async (req: AuthRequest): Promise<AuthResult> => {
   return await authenticateUser(req, { required: true });
 };

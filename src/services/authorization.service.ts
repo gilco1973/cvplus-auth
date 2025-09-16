@@ -6,7 +6,7 @@
  * 
  * Author: Gil Klainert  
  * Date: August 28, 2025
- */
+  */
 
 import { HttpsError } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
@@ -52,7 +52,7 @@ export interface RoleCheckOptions {
  * 
  * Provides consolidated role-based access control to eliminate scattered
  * authorization patterns across Firebase Functions.
- */
+  */
 export class FirebaseAuthorizationService {
   private db: admin.firestore.Firestore;
   private roleCache = new Map<string, UserRole>();
@@ -74,7 +74,7 @@ export class FirebaseAuthorizationService {
    *   throw new Error('Insufficient permissions');
    * }
    * ```
-   */
+    */
   async requireRole(
     uid: string, 
     requiredRoles: string | string[], 
@@ -128,7 +128,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Check if user has permission for specific resource and action
-   */
+    */
   async hasPermission(
     context: AuthorizationContext,
     resource: string,
@@ -183,7 +183,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Require permission for resource and action
-   */
+    */
   async requirePermission(
     context: AuthorizationContext,
     resource: string,
@@ -203,7 +203,7 @@ export class FirebaseAuthorizationService {
    * Check if user can access admin features
    * 
    * Consolidates admin access patterns found across multiple functions
-   */
+    */
   async requireAdminAccess(uid: string): Promise<string[]> {
     return this.requireRole(uid, ['admin', 'superadmin'], {
       customMessage: 'Administrative access required'
@@ -214,7 +214,7 @@ export class FirebaseAuthorizationService {
    * Check if user can access premium features
    * 
    * Consolidates premium access patterns from enhancedPremiumGuard
-   */
+    */
   async requirePremiumAccess(uid: string): Promise<string[]> {
     const userRoles = await this.getUserRoles(uid);
     const premiumRoles = ['premium', 'enterprise', 'admin', 'superadmin'];
@@ -240,7 +240,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Check enterprise access
-   */
+    */
   async requireEnterpriseAccess(uid: string): Promise<string[]> {
     return this.requireRole(uid, ['enterprise', 'admin', 'superadmin'], {
       hierarchyLevel: 80,
@@ -250,7 +250,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Get user roles with caching
-   */
+    */
   private async getUserRoles(uid: string): Promise<string[]> {
     const cacheKey = `roles:${uid}`;
     const now = Date.now();
@@ -286,7 +286,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Get role definition
-   */
+    */
   private async getRole(roleName: string): Promise<UserRole | null> {
     const cacheKey = `role:${roleName}`;
     const now = Date.now();
@@ -324,7 +324,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Get user's maximum hierarchy level
-   */
+    */
   private async getUserMaxHierarchy(uid: string, userRoles: string[]): Promise<number> {
     let maxHierarchy = 0;
     
@@ -340,7 +340,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Check subscription status as fallback for premium access
-   */
+    */
   private async checkSubscriptionStatus(uid: string): Promise<{
     hasActiveSubscription: boolean;
     tier?: string;
@@ -381,7 +381,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Clear user cache (useful after role changes)
-   */
+    */
   clearUserCache(uid: string): void {
     const cacheKey = `roles:${uid}`;
     this.userRolesCache.delete(cacheKey);
@@ -392,7 +392,7 @@ export class FirebaseAuthorizationService {
 
   /**
    * Clear all caches
-   */
+    */
   clearAllCaches(): void {
     this.roleCache.clear();
     this.userRolesCache.clear();

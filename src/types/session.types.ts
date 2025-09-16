@@ -2,7 +2,7 @@
  * Session Types
  * 
  * Type definitions for session management and authentication state.
- */
+  */
 
 export interface AuthSession {
   sessionId: string;

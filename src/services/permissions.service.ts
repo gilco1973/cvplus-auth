@@ -2,7 +2,7 @@
  * Permissions Service
  * 
  * Manages role-based access control and permission validation.
- */
+  */
 
 import type {
   Permission,
@@ -54,7 +54,7 @@ export class PermissionsService {
 
   /**
    * Checks if a user has a specific permission
-   */
+    */
   async checkPermission(check: PermissionCheck): Promise<PermissionResult> {
     try {
       const userRoles = this.getUserRoles(check.userId);
@@ -112,7 +112,7 @@ export class PermissionsService {
 
   /**
    * Checks if a user has access to a specific feature
-   */
+    */
   async checkFeatureAccess(userId: string, feature: string): Promise<PermissionResult> {
     const featureGate = FEATURE_GATES[feature as keyof typeof FEATURE_GATES];
     
@@ -143,7 +143,7 @@ export class PermissionsService {
 
   /**
    * Gets all permissions for a user
-   */
+    */
   getUserPermissions(userId: string): StandardPermissions {
     const userRoles = this.getUserRoles(userId);
     const permissions: StandardPermissions = {
@@ -193,7 +193,7 @@ export class PermissionsService {
 
   /**
    * Gets permissions for a specific role
-   */
+    */
   private getRolePermissions(roleId: string): Partial<StandardPermissions> {
     const role = this.roleCache.get(roleId);
     if (!role) return {};
@@ -222,7 +222,7 @@ export class PermissionsService {
 
   /**
    * Assigns a role to a user
-   */
+    */
   assignRole(userId: string, roleId: string): boolean {
     try {
       const role = this.roleCache.get(roleId);
@@ -249,7 +249,7 @@ export class PermissionsService {
 
   /**
    * Removes a role from a user
-   */
+    */
   removeRole(userId: string, roleId: string): boolean {
     try {
       const userRoles = this.getUserRoles(userId);
@@ -272,14 +272,14 @@ export class PermissionsService {
 
   /**
    * Gets all roles assigned to a user
-   */
+    */
   getUserRoles(userId: string): string[] {
     return this.userRoles.get(userId) || ['user']; // Default to 'user' role
   }
 
   /**
    * Sets user roles based on premium status and admin flags
-   */
+    */
   updateUserRolesFromStatus(userId: string, isPremium: boolean, isAdmin: boolean = false): void {
     const roles: string[] = ['user']; // Base role
 
@@ -298,7 +298,7 @@ export class PermissionsService {
 
   /**
    * Checks if a user has a specific role
-   */
+    */
   hasRole(userId: string, roleId: string): boolean {
     const userRoles = this.getUserRoles(userId);
     return userRoles.includes(roleId);
@@ -306,7 +306,7 @@ export class PermissionsService {
 
   /**
    * Checks if a user is an admin
-   */
+    */
   isAdmin(userId: string): boolean {
     const userRoles = this.getUserRoles(userId);
     return userRoles.some(role => ['admin', 'super_admin'].includes(role));
@@ -314,7 +314,7 @@ export class PermissionsService {
 
   /**
    * Checks if a user is a premium user
-   */
+    */
   isPremiumUser(userId: string): boolean {
     const userRoles = this.getUserRoles(userId);
     return userRoles.some(role => ['premium', 'professional', 'enterprise', 'admin', 'super_admin'].includes(role));
@@ -322,7 +322,7 @@ export class PermissionsService {
 
   /**
    * Gets the highest role for a user based on hierarchy
-   */
+    */
   getUserHighestRole(userId: string): string {
     const userRoles = this.getUserRoles(userId);
     
@@ -343,21 +343,21 @@ export class PermissionsService {
 
   /**
    * Gets all available roles
-   */
+    */
   getAllRoles(): Role[] {
     return Array.from(this.roleCache.values());
   }
 
   /**
    * Gets all available permissions
-   */
+    */
   getAllPermissions(): Permission[] {
     return Array.from(this.permissionCache.values());
   }
 
   /**
    * Validates permission context
-   */
+    */
   private validatePermissionContext(context?: PermissionContext): boolean {
     // Add context validation logic as needed
     return true;
@@ -365,7 +365,7 @@ export class PermissionsService {
 
   /**
    * Clears user roles (useful for testing or user deletion)
-   */
+    */
   clearUserRoles(userId: string): void {
     this.userRoles.delete(userId);
     logger.debug('User roles cleared', { userId });
@@ -373,7 +373,7 @@ export class PermissionsService {
 
   /**
    * Gets permission matrix for debugging
-   */
+    */
   getPermissionMatrix(): typeof PERMISSION_MATRIX {
     return PERMISSION_MATRIX;
   }

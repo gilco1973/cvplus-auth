@@ -3,7 +3,7 @@
  * 
  * Core authentication service providing user management, session handling,
  * and integration with Firebase Authentication and Google OAuth.
- */
+  */
 
 import { 
   Auth,

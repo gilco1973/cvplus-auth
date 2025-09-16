@@ -2,7 +2,7 @@
  * Configuration Types
  * 
  * Type definitions for authentication module configuration.
- */
+  */
 
 export interface AuthModuleConfig {
   firebase: FirebaseConfig;

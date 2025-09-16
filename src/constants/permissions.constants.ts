@@ -2,7 +2,7 @@
  * Permissions Constants
  * 
  * Role definitions and permission matrices for the CVPlus platform.
- */
+  */
 
 import type { 
   Role, 

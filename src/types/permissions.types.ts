@@ -2,7 +2,7 @@
  * Permissions Types
  * 
  * Type definitions for role-based access control and permissions.
- */
+  */
 
 export interface Permission {
   id: string;

@@ -3,7 +3,7 @@
  *
  * Specialized logger for authentication and authorization events
  * Provides domain-specific logging methods for security and audit compliance
- */
+  */
 
 // Import logging directly from Layer 0 (correct architectural dependency)
 import {
@@ -20,7 +20,7 @@ import {
 
 /**
  * Authentication event types
- */
+  */
 export enum AuthEventType {
   LOGIN_ATTEMPT = 'auth.login.attempt',
   LOGIN_SUCCESS = 'auth.login.success',
@@ -42,7 +42,7 @@ export enum AuthEventType {
 
 /**
  * Login attempt result
- */
+  */
 export enum LoginResult {
   SUCCESS = 'success',
   INVALID_CREDENTIALS = 'invalid_credentials',
@@ -55,7 +55,7 @@ export enum LoginResult {
 
 /**
  * Authentication context interface
- */
+  */
 export interface AuthContext {
   userId?: string;
   userEmail?: string;
@@ -79,7 +79,7 @@ export interface AuthContext {
 
 /**
  * Specialized authentication logger using CVPlus logging system
- */
+  */
 export class AuthLogger {
   private readonly logger: Logger;
   private readonly packageName = '@cvplus/auth';
@@ -93,7 +93,7 @@ export class AuthLogger {
 
   /**
    * Log authentication events
-   */
+    */
   logAuthEvent(eventType: AuthEventType, context: Partial<AuthContext>, details?: any): void {
     const correlationId = CorrelationService.getCurrentCorrelationId();
     const auditAction = this.mapEventTypeToAuditAction(eventType);
@@ -140,7 +140,7 @@ export class AuthLogger {
 
   /**
    * Log login attempts
-   */
+    */
   logLoginAttempt(userEmail: string, result: LoginResult, context: Partial<AuthContext> = {}): void {
     const eventType = result === LoginResult.SUCCESS ? AuthEventType.LOGIN_SUCCESS : AuthEventType.LOGIN_FAILURE;
 
@@ -153,14 +153,14 @@ export class AuthLogger {
 
   /**
    * Log session events
-   */
+    */
   logSessionEvent(eventType: AuthEventType.SESSION_CREATE | AuthEventType.SESSION_DESTROY, context: Partial<AuthContext>): void {
     this.logAuthEvent(eventType, context);
   }
 
   /**
    * Log permission checks
-   */
+    */
   logPermissionCheck(userId: string, permission: string, granted: boolean, context: Partial<AuthContext> = {}): void {
     this.logAuthEvent(AuthEventType.PERMISSION_CHECK, {
       ...context,
@@ -172,7 +172,7 @@ export class AuthLogger {
 
   /**
    * Log suspicious activity
-   */
+    */
   logSuspiciousActivity(description: string, context: Partial<AuthContext>): void {
     const correlationId = CorrelationService.getCurrentCorrelationId();
 
@@ -199,7 +199,7 @@ export class AuthLogger {
 
   /**
    * Log security events
-   */
+    */
   logSecurityEvent(message: string, context: Partial<AuthContext> = {}): void {
     const correlationId = CorrelationService.getCurrentCorrelationId();
 
@@ -226,7 +226,7 @@ export class AuthLogger {
 
   /**
    * Log errors with context
-   */
+    */
   logError(error: Error, context: Partial<AuthContext> = {}): void {
     const correlationId = CorrelationService.getCurrentCorrelationId();
 
@@ -239,7 +239,7 @@ export class AuthLogger {
 
   /**
    * Map authentication event types to audit actions
-   */
+    */
   private mapEventTypeToAuditAction(eventType: AuthEventType): AuditAction | null {
     switch (eventType) {
       case AuthEventType.LOGIN_SUCCESS:

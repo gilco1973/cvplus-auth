@@ -5,7 +5,7 @@
  * 
  * @author Gil Klainert
  * @version 1.0.0 - CVPlus Auth Module
- */
+  */
 
 export { AuthGuard } from './AuthGuard';
 export { PermissionGate, AdminOnly, ModeratorOnly, FeatureGate } from './PermissionGate';

@@ -6,7 +6,7 @@
  * 
  * Author: Gil Klainert
  * Date: August 28, 2025
- */
+  */
 
 import { Response, NextFunction } from 'express';
 import { CallableRequest } from 'firebase-functions/v2/https';
@@ -52,14 +52,14 @@ export interface ResourceOwnershipConfig extends JobOwnershipValidationOptions {
  * Middleware Factory Service
  * 
  * Creates standardized middleware functions to replace scattered auth patterns
- */
+  */
 export class MiddlewareFactory {
 
   /**
    * Create basic authentication middleware for Express
    * 
    * Replaces scattered Express auth patterns across middleware files
-   */
+    */
   createExpressAuthMiddleware(config?: BasicAuthMiddlewareConfig) {
     return async (req: AuthenticatedExpressRequest, res: Response, next: NextFunction): Promise<void> => {
       try {
@@ -105,7 +105,7 @@ export class MiddlewareFactory {
    * Create role-based authorization middleware for Express
    * 
    * Consolidates role checking patterns from multiple middleware files
-   */
+    */
   createRoleMiddleware(config: RoleMiddlewareConfig) {
     return async (req: AuthenticatedExpressRequest, res: Response, next: NextFunction): Promise<void> => {
       try {
@@ -148,7 +148,7 @@ export class MiddlewareFactory {
    * Create premium access middleware
    * 
    * Consolidates patterns from enhancedPremiumGuard.ts (572 lines)
-   */
+    */
   createPremiumMiddleware(config?: PremiumMiddlewareConfig) {
     return async (req: AuthenticatedExpressRequest, res: Response, next: NextFunction): Promise<void> => {
       try {
@@ -221,7 +221,7 @@ export class MiddlewareFactory {
    * Create Firebase Functions auth validator
    * 
    * Replaces the basic auth validation pattern found in 50+ functions
-   */
+    */
   createCallableAuthValidator(options?: AuthValidationOptions) {
     return async (request: CallableRequest) => {
       return authService.requireAuth(request, options);
@@ -230,7 +230,7 @@ export class MiddlewareFactory {
 
   /**
    * Create Firebase Functions role validator
-   */
+    */
   createCallableRoleValidator(roles: string | string[], options?: RoleCheckOptions) {
     return async (request: CallableRequest) => {
       const authResult = await authService.requireAuth(request);
@@ -241,7 +241,7 @@ export class MiddlewareFactory {
 
   /**
    * Create Firebase Functions admin validator
-   */
+    */
   createCallableAdminValidator() {
     return async (request: CallableRequest) => {
       const authResult = await authService.requireAuth(request);
@@ -252,7 +252,7 @@ export class MiddlewareFactory {
 
   /**
    * Create Firebase Functions premium validator
-   */
+    */
   createCallablePremiumValidator(feature?: string) {
     return async (request: CallableRequest) => {
       const authResult = await authService.requireAuth(request);
@@ -275,7 +275,7 @@ export class MiddlewareFactory {
    * Create resource ownership validator
    * 
    * Consolidates job ownership patterns from authGuard.ts
-   */
+    */
   createResourceOwnershipValidator(config: ResourceOwnershipConfig) {
     return async (request: CallableRequest, resourceId: string) => {
       if (config.logOwnershipChecks) {
@@ -295,7 +295,7 @@ export class MiddlewareFactory {
    * Create composite middleware that combines multiple checks
    * 
    * For complex scenarios requiring multiple validations
-   */
+    */
   createCompositeMiddleware(middlewares: Array<(req: AuthenticatedExpressRequest, res: Response, next: NextFunction) => void>) {
     return async (req: AuthenticatedExpressRequest, res: Response, next: NextFunction): Promise<void> => {
       const runMiddleware = (middleware: any) => {

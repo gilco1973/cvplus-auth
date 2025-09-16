@@ -6,7 +6,7 @@
  * 
  * Author: Gil Klainert
  * Date: August 28, 2025
- */
+  */
 
 import { Request } from 'express';
 import { CallableRequest } from 'firebase-functions/v2/https';
@@ -18,7 +18,7 @@ import * as admin from 'firebase-admin';
 
 /**
  * Enhanced request types with authentication context
- */
+  */
 export interface AuthenticatedCallableRequest extends CallableRequest {
   auth: {
     uid: string;
@@ -36,7 +36,7 @@ export interface AuthenticatedExpressRequest extends Request {
 
 /**
  * Authentication validation options
- */
+  */
 export interface AuthValidationOptions {
   requireEmailVerification?: boolean;
   allowedRoles?: string[];
@@ -48,7 +48,7 @@ export interface AuthValidationOptions {
 
 /**
  * Authentication validation result
- */
+  */
 export interface AuthValidationResult {
   uid: string;
   email?: string;
@@ -61,7 +61,7 @@ export interface AuthValidationResult {
 
 /**
  * Job ownership validation options
- */
+  */
 export interface JobOwnershipValidationOptions {
   collectionPath: string;
   docIdField?: string;
@@ -76,7 +76,7 @@ export interface JobOwnershipValidationOptions {
 
 /**
  * User role definition
- */
+  */
 export interface UserRole {
   readonly id: string;
   readonly name: string;
@@ -89,7 +89,7 @@ export interface UserRole {
 
 /**
  * Permission definition
- */
+  */
 export interface Permission {
   readonly id: string;
   readonly resource: string;
@@ -100,7 +100,7 @@ export interface Permission {
 
 /**
  * Permission condition
- */
+  */
 export interface PermissionCondition {
   readonly field: string;
   readonly operator: 'equals' | 'in' | 'not_in' | 'greater_than' | 'less_than' | 'exists';
@@ -110,7 +110,7 @@ export interface PermissionCondition {
 
 /**
  * Authorization context
- */
+  */
 export interface AuthorizationContext {
   uid: string;
   roles: string[];
@@ -123,7 +123,7 @@ export interface AuthorizationContext {
 
 /**
  * Role checking options
- */
+  */
 export interface RoleCheckOptions {
   requireAll?: boolean;
   hierarchyLevel?: number;
@@ -134,7 +134,7 @@ export interface RoleCheckOptions {
 
 /**
  * Permission check result
- */
+  */
 export interface PermissionCheckResult {
   granted: boolean;
   reason?: string;
@@ -145,7 +145,7 @@ export interface PermissionCheckResult {
 
 /**
  * Permission condition evaluation result
- */
+  */
 export interface PermissionConditionResult {
   condition: PermissionCondition;
   satisfied: boolean;
@@ -159,7 +159,7 @@ export interface PermissionConditionResult {
 
 /**
  * Basic auth middleware configuration
- */
+  */
 export interface BasicAuthMiddlewareConfig {
   requireEmailVerification?: boolean;
   logRequests?: boolean;
@@ -170,7 +170,7 @@ export interface BasicAuthMiddlewareConfig {
 
 /**
  * Role middleware configuration
- */
+  */
 export interface RoleMiddlewareConfig extends RoleCheckOptions {
   roles: string | string[];
   logAccess?: boolean;
@@ -179,7 +179,7 @@ export interface RoleMiddlewareConfig extends RoleCheckOptions {
 
 /**
  * Premium middleware configuration
- */
+  */
 export interface PremiumMiddlewareConfig {
   requiredFeature?: string;
   gracePeriodDays?: number;
@@ -193,7 +193,7 @@ export interface PremiumMiddlewareConfig {
 
 /**
  * Resource ownership middleware configuration
- */
+  */
 export interface ResourceOwnershipConfig extends JobOwnershipValidationOptions {
   logOwnershipChecks?: boolean;
   allowSharedAccess?: boolean;
@@ -202,7 +202,7 @@ export interface ResourceOwnershipConfig extends JobOwnershipValidationOptions {
 
 /**
  * Composite middleware configuration
- */
+  */
 export interface CompositeMiddlewareConfig {
   middlewares: Array<(req: AuthenticatedExpressRequest, res: any, next: any) => void>;
   stopOnFirstFailure?: boolean;
@@ -215,7 +215,7 @@ export interface CompositeMiddlewareConfig {
 
 /**
  * Authentication error codes
- */
+  */
 export type AuthErrorCode = 
   | 'unauthenticated'
   | 'permission-denied' 
@@ -233,7 +233,7 @@ export type AuthErrorCode =
 
 /**
  * Authentication error details
- */
+  */
 export interface AuthError {
   code: AuthErrorCode;
   message: string;
@@ -248,7 +248,7 @@ export interface AuthError {
 
 /**
  * Auth event types for auditing
- */
+  */
 export type AuthEventType = 
   | 'login_attempt'
   | 'login_success'
@@ -266,7 +266,7 @@ export type AuthEventType =
 
 /**
  * Auth event for auditing
- */
+  */
 export interface AuthEvent {
   type: AuthEventType;
   uid?: string;
@@ -286,7 +286,7 @@ export interface AuthEvent {
 
 /**
  * User subscription status
- */
+  */
 export interface UserSubscription {
   tier: 'free' | 'premium' | 'enterprise';
   status: 'active' | 'cancelled' | 'expired' | 'grace_period' | 'trial';
@@ -301,7 +301,7 @@ export interface UserSubscription {
 
 /**
  * Subscription limits
- */
+  */
 export interface SubscriptionLimits {
   monthlyUploads: number;
   cvGenerations: number;
@@ -318,7 +318,7 @@ export interface SubscriptionLimits {
 
 /**
  * Cache configuration
- */
+  */
 export interface CacheConfig {
   ttlMs: number;
   maxSize?: number;
@@ -328,7 +328,7 @@ export interface CacheConfig {
 
 /**
  * Cache entry
- */
+  */
 export interface CacheEntry<T> {
   value: T;
   expiresAt: number;
@@ -343,7 +343,7 @@ export interface CacheEntry<T> {
 
 /**
  * Migration mapping for old patterns
- */
+  */
 export interface AuthMigrationMapping {
   oldPattern: string;
   newPattern: string;
@@ -353,7 +353,7 @@ export interface AuthMigrationMapping {
 
 /**
  * Migration result
- */
+  */
 export interface MigrationResult {
   success: boolean;
   patternsReplaced: number;
@@ -368,7 +368,7 @@ export interface MigrationResult {
 
 /**
  * Rate limiting configuration
- */
+  */
 export interface RateLimitConfig {
   windowMs: number;
   maxRequests: number;
@@ -379,7 +379,7 @@ export interface RateLimitConfig {
 
 /**
  * Security headers configuration
- */
+  */
 export interface SecurityHeadersConfig {
   contentTypeOptions?: boolean;
   frameOptions?: string;

@@ -8,7 +8,7 @@
  * @author Gil Klainert
  * @version 1.0.0 - CVPlus Auth Module
  * @migrated 2025-08-28 - Security-critical migration from root repository
- */
+  */
 
 import { HttpsError, CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
@@ -26,7 +26,7 @@ export interface AuthenticatedRequest extends CallableRequest {
 /**
  * Core authentication middleware - migrated from root authGuard.ts
  * Provides comprehensive Firebase authentication validation
- */
+  */
 export const requireAuth = async (request: CallableRequest): Promise<AuthenticatedRequest> => {
   // Check if auth context exists
   if (!request.auth) {
@@ -133,7 +133,7 @@ export const requireAuth = async (request: CallableRequest): Promise<Authenticat
 /**
  * Admin authentication middleware - migrated from root repository
  * Validates admin role and permissions with comprehensive logging
- */
+  */
 export const requireAdmin = async (request: CallableRequest): Promise<AuthenticatedRequest> => {
   // First ensure basic authentication
   const authRequest = await requireAuth(request);
@@ -190,7 +190,7 @@ export const requireAdmin = async (request: CallableRequest): Promise<Authentica
 /**
  * Rate limiting middleware for authenticated users
  * Prevents abuse of Firebase Functions by implementing per-user rate limits
- */
+  */
 interface RateLimitOptions {
   windowMs: number; // Time window in milliseconds
   maxRequests: number; // Maximum requests per window
@@ -255,7 +255,7 @@ export const createRateLimit = (options: RateLimitOptions) => {
 
 /**
  * Standard rate limits for different types of functions
- */
+  */
 export const standardRateLimit = createRateLimit({
   windowMs: 60 * 1000, // 1 minute
   maxRequests: 60 // 60 requests per minute
@@ -273,7 +273,7 @@ export const apiRateLimit = createRateLimit({
 
 /**
  * Utility function to check if user has specific custom claims
- */
+  */
 export const requireClaim = (claimKey: string, expectedValue?: any) => {
   return async (request: CallableRequest): Promise<AuthenticatedRequest> => {
     const authRequest = await requireAuth(request);
@@ -314,7 +314,7 @@ export const requireClaim = (claimKey: string, expectedValue?: any) => {
 
 /**
  * Export all middleware functions
- */
+  */
 export default {
   requireAuth,
   requireAdmin,
