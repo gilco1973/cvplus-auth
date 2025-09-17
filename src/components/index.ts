@@ -12,7 +12,6 @@ export { PermissionGate, AdminOnly, ModeratorOnly, FeatureGate } from './Permiss
 // PremiumOnly component removed - moved to @cvplus/premium module
 export { SignInDialog } from './SignInDialog';
 
-// TODO: Add more components as needed
 // export { UserMenu } from './UserMenu';
 // export { UserProfile } from './UserProfile';
 // export { PremiumBadge } from './PremiumBadge';
